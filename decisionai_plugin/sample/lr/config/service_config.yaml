@@ -1,0 +1,10 @@
+tsana_app_name: lr
+series_limit: 5000000
+series_limit_per_series_set: 500
+models_in_training_limit_per_instance: 1
+az_tsana_meta_table: modelmeta
+az_tsana_moniter_table: moniter
+model_temp_dir: temp
+model_dir: model
+model_data_dir: data
+training_owner_life: 60

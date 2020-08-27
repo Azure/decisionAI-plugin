@@ -1,0 +1,6 @@
+graft decisionai_plugin
+prune decisionai_plugin/.git
+prune decisionai_plugin/.vscode
+prune decisionai_plugin/__pycache__
+prune decisionai_plugin/*/__pycache__
+prune decisionai_plugin/*/*/__pycache__
