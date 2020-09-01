@@ -6,6 +6,8 @@ from .util.retryrequests import RetryRequests
 from .util.series import Series
 from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
 
+from telemetry import log
+
 REQUEST_TIMEOUT_SECONDS = 30
 
 
@@ -91,7 +93,9 @@ class TSANAClient(object):
     # Return:
     #   meta: the meta of the specified metric, or None if there is something wrong. 
     def get_metric_meta(self, api_endpoint, api_key, metric_id):
-        return self.get(api_endpoint, api_key, '/metrics/' + metric_id + '/meta')
+        r = self.get(api_endpoint, api_key, '/metrics/' + metric_id + '/meta')
+        log.info("******get_metric_meta******:\nresponse: {}\n******************".format(r))
+        return r
 
     def get_dimesion_values(self, api_endpoint, api_key, metric_id, dimension_name):
         dims = self.get(api_endpoint, api_key, '/metrics/' + metric_id + '/dimensions')
@@ -155,7 +159,7 @@ class TSANAClient(object):
                     ret = self.post(api_endpoint, api_key, '/metrics/series/data', data=dict(value=sub_series))
                     sub_multi_series_data = [
                         Series(factor['id']['metricId'], sub_series[idx]['seriesId'], factor['id']['dimension'],
-                                [dict(timestamp=get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount), offset), 
+                                [dict(timestamp=dt_to_str(get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount), offset)), 
                                         value=y[1], **{field: y[get_field_idx(factor['fields'], field)] for field in fields_filter})
                                 for y in factor['values']])
                         for idx, factor in enumerate(ret['value'])]
@@ -164,6 +168,10 @@ class TSANAClient(object):
         if not len(multi_series_data):
             raise Exception("Series is empty")
 
+        data_str = ''
+        for series in multi_series_data:
+            data_str += json.dumps(series.__dict__) + '\n'
+        log.info("******get_timeseries******:\nresponse: {}\n******************".format(data_str))
         return multi_series_data
 
     # Get ranked dimensions

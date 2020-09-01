@@ -1,3 +1,6 @@
+## [0.0.45] - 2020-08-26
+- Fix pandas dataframe add column failure problem.
+  
 ## [0.0.44] - 2020-08-25
 - Add linear regression sample.
 - Fix get_time_list bug when start_time is equal to end_time.

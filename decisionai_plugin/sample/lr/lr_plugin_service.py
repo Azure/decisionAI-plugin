@@ -62,10 +62,20 @@ class LrPluginService(PluginService):
                                                        start_time, end_time, offset=0,
                                                        top=self.config.series_limit_per_series_set)
 
-        fill_missing = generate_filled_missing_by_field(factors_data, start_time, end_time, 'Custom', 300, Fill.Previous, 0)
+        #fill_missing = generate_filled_missing_by_field(factors_data, start_time, end_time, 'Custom', 300, Fill.Previous, 0)
 
         return factors_data
 
+    def do_verify(self, parameters, context):
+        # Check series set permission
+        for data in parameters['seriesSets']:
+            meta = self.tsanaclient.get_metric_meta(parameters['apiEndpoint'], parameters['apiKey'], data['metricId'])
+
+            if meta is None:
+                return STATUS_FAIL, 'You have no permission to read Metric {}'.format(data['metricId'])
+
+        return STATUS_SUCCESS, ''
+        
     def do_inference(self, model_dir, parameters, context):
         results = []
         factors_data = self.prepare_inference_data(parameters)

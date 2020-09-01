@@ -98,7 +98,7 @@ def generate_filled_missing_by_field(series_data, start, end, gran, custom_in_se
         ts_df.set_index(TIMESTAMP, inplace=True)
 
         for field in fields:
-            ts_df[series_id] = pd.DataFrame([value[field] for value in series.value], columns=[series_id])            
+            ts_df[series_id] = [value[field] for value in series.value]
             ts_df = pd.merge(full_data_range, ts_df, how='left', on=TIMESTAMP)
 
             if field not in data_panel:

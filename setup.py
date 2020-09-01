@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.44",
+    version="0.0.45",
     keywords = ("pip", "timeseries", "plugin"),
     description = "Time series analysis plugin",
     long_description = "An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
