@@ -18,7 +18,7 @@
 4. Add config for your own plugin. Example: <https://github.com/Azure/decisionAI-plugin/blob/main/decisionai_plugin/sample/lr/config/service_config.yaml>
    1. All these config items are needed for framework. You should not change them by default.
    2. You can add your own config items if needed. You can access the items from self.config defined and initialized in PluginService.
-5. Test your own plugin at local. Example: <https://github.com/Azure/decisionAI-plugin/blob/main/decisionai_plugin/sample/lr/test/lr_test.py>
+5. Test/Debug your own plugin at local. Example: <https://github.com/Azure/decisionAI-plugin/blob/main/decisionai_plugin/sample/lr/test/lr_test.py>
 6. Add requirement for your plugin. Example: <https://github.com/Azure/decisionAI-plugin/blob/main/decisionai_plugin/sample/lr/requirements.txt> 
 7. Add entry point for your plugin. Example: <https://github.com/Azure/decisionAI-plugin/blob/main/decisionai_plugin/sample/lr/run_server.py>
 8. Add docker file for your plugin. Example: <https://github.com/Azure/decisionAI-plugin/blob/main/decisionai_plugin/lr-plugin.Dockerfile>
