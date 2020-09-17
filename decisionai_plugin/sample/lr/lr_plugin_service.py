@@ -85,8 +85,8 @@ class LrPluginService(PluginService):
         for timestamp in get_time_list(start_time, end_time, gran):
             single_point = []
             for factor in factors_data:
-                x = np.array([tuple['timestamp'].timestamp() for tuple in factor.value if tuple['timestamp'] < timestamp])[-traceback_window:].reshape(-1, 1)
-                y = np.array([tuple['value'] for tuple in factor.value if tuple['timestamp'] < timestamp])[-traceback_window:]
+                x = np.array([str_to_dt(tuple['timestamp']).timestamp() for tuple in factor.value if str_to_dt(tuple['timestamp']) < timestamp])[-traceback_window:].reshape(-1, 1)
+                y = np.array([tuple['value'] for tuple in factor.value if str_to_dt(tuple['timestamp']) < timestamp])[-traceback_window:]
                 
                 model = linear_model.LinearRegression().fit(x, y)
                 y_new = model.predict(x)

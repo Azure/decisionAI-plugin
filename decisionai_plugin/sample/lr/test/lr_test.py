@@ -5,10 +5,13 @@ import time
 import json
 
 environ['SERVICE_CONFIG_FILE'] = 'sample/lr/config/service_config.yaml'
+#environ['AZURE_STORAGE_ACCOUNT'] = 'xxxxxx'
+#environ['AZURE_STORAGE_ACCOUNT_KEY'] = 'xxxxxx'
 
 from sample.lr.lr_plugin_service import LrPluginService
 from common.plugin_model_api import api_init, app
 from common.util.timeutil import str_to_dt
+from common.util.constant import STATUS_SUCCESS, STATUS_FAIL, InferenceState
 
 if __name__ == '__main__':
     
@@ -18,6 +21,104 @@ if __name__ == '__main__':
     client = app.test_client()
     response = client.get('/')
 
-    request_json = '{"seriesSets":[{"seriesSetName":"yongw/5min_value","seriesSetId":"33973891-f2a0-4e7d-9221-c7bce5de50f7","metricId":"f7a8325a-ba58-4c6f-8572-56f5efeb1beb","dimensionFilter":{"seriesId":"3"},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"8d0c1aab-54d1-4237-a003-9d1a0f88c195"}],"metricMeta":{"granularityName":"Custom","granularityAmount":300,"datafeedId":"603c065b-0cfe-46f4-98ce-f8b72e400fdd","metricName":"value","datafeedName":"yongw/5min","dataStartFrom":"2020-07-01T00:00:00Z"}},{"seriesSetName":"yongw/5min_value","seriesSetId":"700fe222-4d9e-403a-b459-c275f97bd0da","metricId":"f7a8325a-ba58-4c6f-8572-56f5efeb1beb","dimensionFilter":{"seriesId":"2"},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"8d0c1aab-54d1-4237-a003-9d1a0f88c195"}],"metricMeta":{"granularityName":"Custom","granularityAmount":300,"datafeedId":"603c065b-0cfe-46f4-98ce-f8b72e400fdd","metricName":"value","datafeedName":"yongw/5min","dataStartFrom":"2020-07-01T00:00:00Z"}},{"seriesSetName":"yongw/5min_value","seriesSetId":"10864d2b-c078-45bd-adda-f55ec0e945d0","metricId":"f7a8325a-ba58-4c6f-8572-56f5efeb1beb","dimensionFilter":{"seriesId":"1"},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"8d0c1aab-54d1-4237-a003-9d1a0f88c195"}],"metricMeta":{"granularityName":"Custom","granularityAmount":300,"datafeedId":"603c065b-0cfe-46f4-98ce-f8b72e400fdd","metricName":"value","datafeedName":"yongw/5min","dataStartFrom":"2020-07-01T00:00:00Z"}},{"seriesSetName":"yongw/5min_value","seriesSetId":"b21522dc-f785-426f-a3d6-65e77b884f66","metricId":"f7a8325a-ba58-4c6f-8572-56f5efeb1beb","dimensionFilter":{"seriesId":"0"},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"8d0c1aab-54d1-4237-a003-9d1a0f88c195"}],"metricMeta":{"granularityName":"Custom","granularityAmount":300,"datafeedId":"603c065b-0cfe-46f4-98ce-f8b72e400fdd","metricName":"value","datafeedName":"yongw/5min","dataStartFrom":"2020-07-01T00:00:00Z"}}],"instance":{"instanceName":"MAGA-TEST_Instance_1596081953900","instanceId":"47e08c86-088e-4ff2-b801-10f1abcfa97d","status":"Active","appId":"c96fbe27-b5b2-4a22-a27e-881259745bb7","appName":"MAGAplugin","appDisplayName":"MAGA-TEST","appType":"External","remoteModelKey":"e35aec16-d9f8-11ea-9943-e2140f8a2855","remoteCandidateModelKey":"","params":{"alertRatio":-1,"alertWindow":1,"fillMissingMethod":"Linear","fillMissingValue":1,"mergeMode":"Outer","metricDeficiency":0,"sensitivity":92,"snooze":3,"tracebackWindow":8},"hookIds":["e78723ef-3c12-4830-9f79-e9e7073d728a"]},"groupId":"6b733629-465a-4f9b-aeb5-2faa56aeda53","startTime":"2020-08-10T09:20:00Z","endTime":"2020-08-10T09:20:00Z","apiKey":"525f9a7e-d59b-4f6a-bf26-fcb647d097a1","apiEndpoint":"https://stock-exp3-api.azurewebsites.net/","manually":true}'
+    request_json = '''
+                    {
+                        "seriesSets": [{
+                                "seriesSetName": "TCP-Connection_Count",
+                                "seriesSetId": "681cd8a4-4bc9-491b-b2dd-1a588aae534e",
+                                "metricId": "7cf6ad65-d127-4ca7-9921-3b5c6985fd2f",
+                                "dimensionFilter": {
+                                    "CapacityUnit": "PS2PR01CU001",
+                                    "PerformanceCounterName": "TCPv4 Connections Established",
+                                    "location": "PS2"
+                                },
+                                "enrichmentConfigs": [{
+                                        "enrichmentName": "AnomalyDetection",
+                                        "enrichmentConfigId": "9c2196ec-7955-4e88-a964-eb789d444fa3"
+                                    }
+                                ],
+                                "metricMeta": {
+                                    "granularityName": "Custom",
+                                    "granularityAmount": 600,
+                                    "datafeedId": "e1dffb01-3c9b-4e9e-bc34-8ce52b3c5b9a",
+                                    "metricName": "Count",
+                                    "datafeedName": "TCP-Connection",
+                                    "dataStartFrom": "2020-08-01T00:00:00Z"
+                                }
+                            }, {
+                                "seriesSetName": "TCP-Connection_Count",
+                                "seriesSetId": "5bdeecca-552a-4950-80f5-dfd28e0fb7b1",
+                                "metricId": "7cf6ad65-d127-4ca7-9921-3b5c6985fd2f",
+                                "dimensionFilter": {
+                                    "CapacityUnit": "CY4PR13CU002",
+                                    "PerformanceCounterName": "TCPv4 Connections Established",
+                                    "location": "CY4"
+                                },
+                                "enrichmentConfigs": [{
+                                        "enrichmentName": "AnomalyDetection",
+                                        "enrichmentConfigId": "9c2196ec-7955-4e88-a964-eb789d444fa3"
+                                    }
+                                ],
+                                "metricMeta": {
+                                    "granularityName": "Custom",
+                                    "granularityAmount": 600,
+                                    "datafeedId": "e1dffb01-3c9b-4e9e-bc34-8ce52b3c5b9a",
+                                    "metricName": "Count",
+                                    "datafeedName": "TCP-Connection",
+                                    "dataStartFrom": "2020-08-01T00:00:00Z"
+                                }
+                            }
+                        ],
+                        "instance": {
+                            "instanceName": "LinearRegression_Instance_1600262682811",
+                            "instanceId": "9a9f325c-529d-4c47-a9bf-24d02d70f1ea",
+                            "status": "Active",
+                            "appId": "b7bd9c1e-3604-4483-9743-7a0798c7f5c8",
+                            "appName": "LinearRegression",
+                            "appDisplayName": "LinearRegression",
+                            "remoteModelKey": "",
+                            "remoteCandidateModelKey": "",
+                            "params": {
+                                "metricDeficiency": 0,
+                                "tracebackWindow": 10
+                            },
+                            "target": {
+                                "target": "JSON"
+                            },
+                            "hookIds": []
+                        },
+                        "groupId": "d6f24f36-ae78-4337-bbd8-7cc964a38747",
+                        "groupName": "lr-test",
+                        "startTime": "2020-09-15T00:00:00Z",
+                        "endTime": "2020-09-16T00:00:00Z",
+                        "apiKey": "d60e17bc-2a9e-4ee5-a937-9542b40124ef",
+                        "apiEndpoint": "https://aidice-app-api.azurewebsites.net/",
+                        "manually": true
+                    }
+                    '''
     response = client.post('/lr/models/0000/inference', data=request_json)
-    time.sleep(1000)
+
+    time.sleep(10)
+
+    while True:
+        ready = True
+        result, message, value = lr.tsanaclient.get_inference_result(json.loads(request_json))
+        if result != STATUS_SUCCESS:
+            ready = False
+            print("Get inference result failed, message: " + message)
+            break
+        
+        for item in value['value']:
+            if item['status'] == 'Running':
+                ready = False
+                break
+
+        if not ready:
+            print("Not ready, wait for 5 seconds...")
+            time.sleep(5)
+        else:
+            break
+    
+    if ready:
+        print("Inference ready now, result is:")
+        print(value)
