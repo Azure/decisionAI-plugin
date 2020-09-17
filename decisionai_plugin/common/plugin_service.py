@@ -57,11 +57,12 @@ class PluginService():
         self.config = config
         self.tsanaclient = TSANAClient(config.series_limit)
 
-        init_monitor(config)
-        sched.add_job(func=lambda: run_monitor(config), trigger="interval", seconds=10)
-        sched.start()
-        atexit.register(lambda: stop_monitor(config))
-        atexit.register(lambda: sched.shutdown())
+        if self.trainable:
+            init_monitor(config)
+            sched.add_job(func=lambda: run_monitor(config), trigger="interval", seconds=10)
+            sched.start()
+            atexit.register(lambda: stop_monitor(config))
+            atexit.register(lambda: sched.shutdown())
 
     def do_verify(self, parameters, context:Context):
         return STATUS_SUCCESS, ''
