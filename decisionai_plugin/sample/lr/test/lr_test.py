@@ -5,8 +5,6 @@ import time
 import json
 
 environ['SERVICE_CONFIG_FILE'] = 'sample/lr/config/service_config.yaml'
-#environ['AZURE_STORAGE_ACCOUNT'] = 'xxxxxx'
-#environ['AZURE_STORAGE_ACCOUNT_KEY'] = 'xxxxxx'
 
 from sample.lr.lr_plugin_service import LrPluginService
 from common.plugin_model_api import api_init, app
