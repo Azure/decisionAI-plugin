@@ -167,11 +167,14 @@ class TSANAClient(object):
     
         if not len(multi_series_data):
             raise Exception("Series is empty")
-
+        
+        # dump data
+        '''
         data_str = ''
         for series in multi_series_data:
             data_str += json.dumps(series.__dict__) + '\n'
         log.info("******get_timeseries******:\nresponse: {}\n******************".format(data_str))
+        '''
         return multi_series_data
 
     # Get ranked dimensions
@@ -253,6 +256,21 @@ class TSANAClient(object):
         except Exception as e:
             return STATUS_FAIL, str(e)
 
+    def get_inference_result(self, parameters):
+        try: 
+            ret = self.get(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' 
+                                + parameters['groupId'] 
+                                + '/appInstances/' 
+                                + parameters['instance']['instanceId'] 
+                                + '/history?startTime=' 
+                                + parameters['startTime']
+                                + '&endTime=' 
+                                + parameters['endTime'])
+            
+            return STATUS_SUCCESS, '', ret
+        except Exception as e:
+            return STATUS_FAIL, str(e), None
+
     # Save a inference result back to TSANA
     # Parameters: 
     #   parameters: a dict object which should includes
@@ -285,21 +303,6 @@ class TSANAClient(object):
         except Exception as e:
             return STATUS_FAIL, str(e)
 
-    def get_inference_result(self, parameters, start_time, end_time):
-        try: 
-            ret = self.get(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' 
-                                + parameters['groupId'] 
-                                + '/appInstances/' 
-                                + parameters['instance']['instanceId'] 
-                                + '/history?startTime=' 
-                                + dt_to_str(start_time)
-                                + '&endTime=' 
-                                + dt_to_str(end_time))
-            
-            return STATUS_SUCCESS, '', ret
-        except Exception as e:
-            return STATUS_FAIL, str(e), None
-
     # Push alert in general
     # Parameters:
     #   api_endpoint: api endpoint for specific user
@@ -307,7 +310,7 @@ class TSANAClient(object):
     #   alert_type: alert type
     #   message: alert message
     # Return:
-    #   result: STATE_SUCCESS / STATE_FAIL
+    #   result: STATE_SUCCESS / STATE_FAIL 
     #   message: description for the result
     def push_alert(self, api_endpoint, api_key, alert_type, message):
         try:
