@@ -85,6 +85,9 @@ class TSANAClient(object):
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, {}'.format(path, str(e)))
 
+    def get_group_detail(self, api_endpoint, api_key, group_id):
+        return self.get(api_endpoint, api_key, '/timeSeriesGroups/' + group_id)
+
     # To get the meta of a specific metric from TSANA
     # Parameters:
     #   apiEndpoint: api endpoint for specific user

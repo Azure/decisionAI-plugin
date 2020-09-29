@@ -7,6 +7,7 @@ import json
 environ['SERVICE_CONFIG_FILE'] = 'sample/lr/config/service_config.yaml'
 
 from sample.lr.lr_plugin_service import LrPluginService
+from sample.util.request_generator import generate_request
 from common.plugin_model_api import api_init, app
 from common.util.timeutil import str_to_dt
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL, InferenceState
@@ -94,13 +95,17 @@ if __name__ == '__main__':
                         "manually": true
                     }
                     '''
+
+    request_body = json.loads(request_json)
+    request_sample = generate_request(lr, request_body['apiEndpoint'], request_body['apiKey'], request_body['groupId'], request_body['instance']['instanceId'], request_body['startTime'], request_body['endTime'])
+    
     response = client.post('/lr/models/0000/inference', data=request_json)
 
     time.sleep(10)
 
     while True:
         ready = True
-        result, message, value = lr.tsanaclient.get_inference_result(json.loads(request_json))
+        result, message, value = lr.tsanaclient.get_inference_result(request_sample)
         if result != STATUS_SUCCESS:
             ready = False
             print("Get inference result failed, message: " + message)
