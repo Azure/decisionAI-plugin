@@ -24,4 +24,5 @@ class DummyPluginService(PluginService):
         return STATUS_SUCCESS, ''
 
     def do_inference(self, model_dir, parameters, context):
-        raise Exception('error')
+        #raise Exception('error')
+        return STATUS_SUCCESS, ''
