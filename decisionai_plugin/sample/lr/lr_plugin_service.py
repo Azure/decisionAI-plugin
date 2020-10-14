@@ -94,6 +94,11 @@ class LrPluginService(PluginService):
                 single_point.append(dict(seriesId=factor.series_id,value=model.predict(np.array([timestamp.timestamp()]).reshape(-1,1))[0],mse=mean_squared_error(y, y_new),r2score=r2_score(y, y_new)))
             results.append(dict(timestamp=dt_to_str(timestamp),status=InferenceState.Ready.name,result=single_point))
         
+        for result in results:
+            for series_result in result['result']:
+                dim = dict(seriesId=series_result['seriesId'])
+                status, message = self.tsanaclient.save_data_points(parameters, parameters['instance']['target']['metrics'][0]['metricId'], dim, [result['timestamp']], [series_result['value']])
+
         status, message = self.tsanaclient.save_inference_result(parameters, results)
         if status != STATUS_SUCCESS:
             raise Exception(message)
