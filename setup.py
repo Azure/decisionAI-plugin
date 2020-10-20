@@ -43,6 +43,7 @@ setup(
 		'Werkzeug==0.16.0',
 		'gunicorn==19.9.0',
         'gevent==1.4.0',
+        'greenlet==0.4.14',
         #'gevent==1.3.4',
         #'greenlet==0.4.13',
 		'apscheduler',
