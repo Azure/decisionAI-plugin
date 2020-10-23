@@ -119,10 +119,9 @@ class TSANAClient(object):
     #   granularityAmount: if granularityName is Custom, granularityAmount is the seconds of the exact granularity
     # Return: 
     #   A array of Series object
-    def get_timeseries(self, api_endpoint, api_key, series_sets, start_time, end_time, offset=0, top=1, fields_filter=[]):
+    def get_timeseries(self, api_endpoint, api_key, series_sets, start_time, end_time, offset=0, top=20, fields_filter=[]):
         end_str = dt_to_str(end_time)
         start_str = dt_to_str(start_time)
-        dedup = {}
 
         multi_series_data = []
         # Query each series's tag
@@ -134,39 +133,36 @@ class TSANAClient(object):
             for dimkey in data['dimensionFilter']:
                 dim[dimkey] = [data['dimensionFilter'][dimkey]]
 
-            para = dict(metricId=data['metricId'], dimensions=dim, count=top, startTime=start_str)
-            ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/rank-series', data=para)
-            series = []
-            for s in ret['value']:
-                if s['seriesId'] not in dedup:
+            skip = 0
+            para = dict(metricId=data['metricId'], dimensions=dim, activeSince=start_str)
+            while True:
+                # Max series limit per call is 1k
+                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, max(min(1000, top - skip), 1)), data=para)
+                if len(ret['value']) == 0:
+                    break
+                    
+                series = []
+                for s in ret['value']:
                     s['startTime'] = start_str
                     s['endTime'] = end_str
-                    s['dimension'] = s['dimensions']
                     s['returnSeriesId'] = True
-                    del s['dimensions']
                     series.append(s)
-                    dedup[s['seriesId']] = True
-            
-            if len(series) > 0:
-                granularityName = data['metricMeta']['granularityName']
-                granularityAmount = data['metricMeta']['granularityAmount']
-                timestamp_num = len(get_time_list(start_time, end_time, (granularityName, granularityAmount)))
-                series_batch_size = max(10000 // timestamp_num, 1)
-
-                series_index = 0
-                while series_index < len(series):
-                    sub_series = []
-                    for i in range(min(series_batch_size, len(series) - series_index)):
-                        sub_series.append(series[series_index])
-                        series_index += 1
-                    ret = self.post(api_endpoint, api_key, '/metrics/series/data', data=dict(value=sub_series))
+                
+                if len(series) > 0:
+                    granularityName = data['metricMeta']['granularityName']
+                    granularityAmount = data['metricMeta']['granularityAmount']
+                    ret = self.post(api_endpoint, api_key, '/metrics/series/data', data=dict(value=series))
                     sub_multi_series_data = [
-                        Series(factor['id']['metricId'], sub_series[idx]['seriesId'], factor['id']['dimension'],
+                        Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
                                 [dict(timestamp=dt_to_str(get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount), offset)), 
                                         value=y[1], **{field: y[get_field_idx(factor['fields'], field)] for field in fields_filter})
                                 for y in factor['values']])
                         for idx, factor in enumerate(ret['value'])]
                     multi_series_data.extend(sub_multi_series_data)
+
+                skip = skip + len(ret['value'])
+                if skip >= top:
+                    break
     
         if not len(multi_series_data):
             raise Exception("Series is empty")

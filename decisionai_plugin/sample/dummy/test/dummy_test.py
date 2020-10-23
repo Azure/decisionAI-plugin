@@ -20,25 +20,107 @@ if __name__ == '__main__':
     client = app.test_client()
     response = client.get('/')
 
-    request_json = '{"groupId":"8e826a5d-1b01-4ff4-a699-38bea97e17de", \
-        "seriesSets":[ \
-            {"seriesSetId":"b643e346-6883-4764-84a5-e63a3788eec9","metricId":"dc5b66cf-6dd0-4c83-bb8f-d849e68a7660","dimensionFilter":{"ts_code":"600030.SH"},"seriesSetName":"Stock price_high","metricMeta":{"granularityName":"Daily","granularityAmount":0,"datafeedId":"29595b1c-531f-445c-adcf-b75b2ab93c34","metricName":"high","datafeedName":"Stock price","dataStartFrom":1105315200000}}, \
-            {"seriesSetId":"0d4cce4d-f4d4-4cef-be87-dbd28062abfc","metricId":"3274f7e6-683b-4d92-b134-0c1186e416a1","dimensionFilter":{"ts_code":"600030.SH"},"seriesSetName":"Stock price_change","metricMeta":{"granularityName":"Daily","granularityAmount":0,"datafeedId":"29595b1c-531f-445c-adcf-b75b2ab93c34","metricName":"change","datafeedName":"Stock price","dataStartFrom":1105315200000}} \
-        ], \
-        "gran":{"granularityString":"Daily","customInSeconds":0}, \
-        "instance":{ \
-            "instanceName":"Forecast_Instance_1586447708033","instanceId":"528cbe52-cb6a-44c0-b388-580aba57f2f7","status":"Active","appId":"173276d9-a7ed-494b-9300-6dd1aa09f2c3","appName":"Forecast","appDisplayName":"Forecast","appType":"Internal","remoteModelKey":"", \
-            "params":{"missingRatio":0.5,"target":{"seriesSetId":"b643e346-6883-4764-84a5-e63a3788eec9","filters":{"ts_code":"600030.SH"},"metricId":"dc5b66cf-6dd0-4c83-bb8f-d849e68a7660","name":"Stock price_high"},"waitInSeconds":60,"windowSize":28, "step":2},"hookIds":[] \
-        }, \
-        "startTime":"2020-03-18T00:00:00Z","endTime":"2020-04-18T00:00:00Z","apiKey":"3517cf61-065d-40e9-8ed4-eda58147982d","apiEndpoint":"https://stock-exp2-api.azurewebsites.net/","fieldsFilter":["IsAnomaly"]}'
+    '''
+    {
+        "groupId": "66f75e07-7c9b-4a52-947a-1a3880b418cb",
+        "apiEndpoint": "https://AIDice-T2-api.azurewebsites.net/",
+        "apiKey": "2812e4ea-ce22-4283-b24d-73333893b240",
+        "name":"my-test","seriesSets":[{"seriesSetName":"localCSV_test2_Totalvalue","seriesSetId":"7e7954a5-7716-414b-ba13-2cc0ca644f03","metricId":"9e5bf248-f016-43ea-835e-fa20bcf67a95","dimensionFilter":{},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"d10a392f-c2c0-4204-94ee-ece960072bf1"}],"metricMeta":{"granularityName":"Daily","granularityAmount":0,"datafeedId":"b6245c1f-b4e4-4294-a707-8f30697978a2","metricName":"Totalvalue","datafeedName":"localCSV_test2","dataStartFrom":"2019-03-17T00:00:00+00:00"}}
+        ],
+        "instance": {
+            "instanceName": "Inconsistency Detection_Instance_1601398919427",
+            "instanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
+            "status": "Active",
+            "appId": "6ea3b8a4-80b3-4fb7-adcd-25e32db6b798",
+            "appName": "Inconsistency",
+            "appDisplayName": "Inconsistency Detection",
+            "appType": "Internal",
+            "remoteModelKey": "",
+            "remoteCandidateModelKey": "",
+            "params": {
+                "detectionWindow": 100,
+                "shift": false,
+                "metricDeficiency": 0,
+                "varNaRatioThreshold": 0.3,
+                "maxHistoryInDays": 180,
+                "tracebackWindow": 0
+            },
+            "target": {
+                "target": "JSON"
+            },
+            "hookIds": []
+        },
+        "startTime": "2019-03-17T00:00:00Z",
+        "endTime": "2019-06-10T00:00:00Z",
+        "manually": true
+    }
+    '''
+    request_json = '''
+                    {
+                        "groupId": "66f75e07-7c9b-4a52-947a-1a3880b418cb",
+                        "apiEndpoint": "https://AIDice-T2-api.azurewebsites.net/",
+                        "apiKey": "2812e4ea-ce22-4283-b24d-73333893b240",
+                        "name":"my-test",
+                        "seriesSets":[{
+                            "seriesSetName":"Gandalf_test_multi_v3_TotalIOsGt30s",
+                            "seriesSetId":"6b0044a1-e0f7-41cc-9bbf-e142af010981",
+                            "metricId":"96542384-5aac-4d1b-9189-f985cbfb8e84",
+                            "dimensionFilter":{
+                            },
+                            "enrichmentConfigs":[{
+                                "enrichmentName":"AnomalyDetection",
+                                "enrichmentConfigId":"29ac460e-6b03-49e1-a593-4d04766a987a"
+                            }],
+                            "metricMeta":{
+                                "granularityName":"Custom",
+                                "granularityAmount":300,
+                                "datafeedId":"3e9f2e86-a5ef-44d3-bcf1-55c973e2db65",
+                                "metricName":"TotalIOsGt30s",
+                                "datafeedName":"Gandalf_test_multi_v3",
+                                "dataStartFrom":"2020-08-23T00:00:00+00:00"
+                            }
+                        }],
+                        "instance": {
+                            "instanceName": "Inconsistency Detection_Instance_1601398919427",
+                            "instanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
+                            "status": "Active",
+                            "appId": "6ea3b8a4-80b3-4fb7-adcd-25e32db6b798",
+                            "appName": "Inconsistency",
+                            "appDisplayName": "Inconsistency Detection",
+                            "appType": "Internal",
+                            "remoteModelKey": "",
+                            "remoteCandidateModelKey": "",
+                            "params": {
+                                "detectionWindow": 100,
+                                "shift": false,
+                                "metricDeficiency": 0,
+                                "varNaRatioThreshold": 0.3,
+                                "maxHistoryInDays": 180,
+                                "tracebackWindow": 0
+                            },
+                            "target": {
+                                "target": "JSON"
+                            },
+                            "hookIds": []
+                        },
+                        "startTime": "2020-10-12T00:00:00Z",
+                        "endTime": "2020-10-12T21:15:00Z",
+                        "manually": true
+                    }
+                    '''
+
+    #do inference
+    for i in range(30):
+        response = client.post('/dummy/models/0000/inference', data=request_json)
+        time.sleep(120)
     
-    response = client.post('/dummy/models/train', data=request_json)
+    #response = client.post('/dummy/models/train', data=request_json)
     #time.sleep(10)
     #response = client.post('/dummy/models/train', data=request_json)
     #response = client.post('/dummy/models/7cbb3a50-dc7a-11ea-a0bb-000d3af88183/inference', data=request_json)
     #response = client.get('/dummy/models/b06f99c6-d186-11ea-a12e-000d3af88183')
     #response = client.get('/dummy/models')
-    time.sleep(1000)
+    #time.sleep(1000)
 
 
     
