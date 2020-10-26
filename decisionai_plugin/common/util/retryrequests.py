@@ -1,4 +1,5 @@
 import requests
+from requests.adapters import HTTPAdapter
 import time
 from telemetry import log
 
@@ -13,17 +14,18 @@ class RetryRequests(object):
         '''
         self.count = count
         self.interval = interval
+        self.session = requests.Session()
+        self.session.mount('https://', HTTPAdapter(pool_maxsize=128))
 
     def get(self, *args, **kwargs):
         for n in range(self.count - 1, -1, -1):
             try:
-                session = requests.Session()
-                r = session.get(*args, **kwargs)
+                r = self.session.get(*args, **kwargs)
                 if not 100 <= r.status_code < 300:
                     raise CommonException('statuscode: {}, message: {}'.format(r.status_code, r.content))
                 return r
             except (CommonException, requests.exceptions.RequestException) as e:
-                session.close()
+                self.session.close()
                 if n > 0:
                     time.sleep(self.interval * 0.001)
                 else:
@@ -32,13 +34,12 @@ class RetryRequests(object):
     def post(self, *args, **kwargs):
         for n in range(self.count - 1, -1, -1):
             try:
-                session = requests.Session()
-                r = session.post(*args, **kwargs)
+                r = self.session.post(*args, **kwargs)
                 if not 100 <= r.status_code < 300:
                     raise CommonException('statuscode: {}, message: {}'.format(r.status_code, r.content))
                 return r
             except (CommonException, requests.exceptions.RequestException) as e:
-                session.close()
+                self.session.close()
                 if n > 0:
                     time.sleep(self.interval * 0.001)
                 else:
@@ -47,13 +48,12 @@ class RetryRequests(object):
     def put(self, *args, **kwargs):
         for n in range(self.count - 1, -1, -1):
             try:
-                session = requests.Session()
-                r = session.put(*args, **kwargs)
+                r = self.session.put(*args, **kwargs)
                 if not 100 <= r.status_code < 300:
                     raise CommonException('statuscode: {}, message: {}'.format(r.status_code, r.content))
                 return r
             except (CommonException, requests.exceptions.RequestException) as e:
-                session.close()
+                self.session.close()
                 if n > 0:
                     time.sleep(self.interval * 0.001)
                 else:
@@ -62,13 +62,12 @@ class RetryRequests(object):
     def delete(self, *args, **kwargs):
         for n in range(self.count - 1, -1, -1):
             try:
-                session = requests.Session()
-                r = session.delete(*args, **kwargs)
+                r = self.session.delete(*args, **kwargs)
                 if not 100 <= r.status_code < 300:
                     raise CommonException('statuscode: {}, message: {}'.format(r.status_code, r.content))
                 return r
             except (CommonException, requests.exceptions.RequestException) as e:
-                session.close()
+                self.session.close()
                 if n > 0:
                     time.sleep(self.interval * 0.001)
                 else:
