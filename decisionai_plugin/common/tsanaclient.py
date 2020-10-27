@@ -127,12 +127,16 @@ class TSANAClient(object):
         multi_series_data = []
         # Query each series's tag
         for data in series_sets:
+            dim = {}
             if 'dimensionFilter' not in data:
                 data['dimensionFilter'] = data['filters']
 
+            for dimkey in data['dimensionFilter']:
+                dim[dimkey] = [data['dimensionFilter'][dimkey]]
+
             skip = 0
             count = 0
-            para = dict(metricId=data['metricId'], dimensionFilter=data['dimensionFilter'], activeSince=dt_to_str(datetime.datetime.min))
+            para = dict(metricId=data['metricId'], dimensionFilter=dim, activeSince=dt_to_str(datetime.datetime.min))
             while True:
                 # Max series limit per call is 1k
                 ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
