@@ -1,5 +1,6 @@
 import json
 import math
+import datetime
 
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
 from .util.retryrequests import RetryRequests
@@ -134,10 +135,11 @@ class TSANAClient(object):
                 dim[dimkey] = [data['dimensionFilter'][dimkey]]
 
             skip = 0
-            para = dict(metricId=data['metricId'], dimensions=dim, activeSince=start_str)
+            count = 0
+            para = dict(metricId=data['metricId'], dimensions=dim, activeSince=dt_to_str(datetime.datetime.min))
             while True:
                 # Max series limit per call is 1k
-                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, max(min(1000, top - skip), 1)), data=para)
+                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
                 if len(ret['value']) == 0:
                     break
                     
@@ -157,13 +159,18 @@ class TSANAClient(object):
                                 [dict(timestamp=dt_to_str(get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount), offset)), 
                                         value=y[1], **{field: y[get_field_idx(factor['fields'], field)] for field in fields_filter})
                                 for y in factor['values']])
-                        for idx, factor in enumerate(ret['value'])]
+                        for factor in ret['value'] if len(factor['values']) > 0]
+                    
+                    count = count + len(sub_multi_series_data)
                     multi_series_data.extend(sub_multi_series_data)
 
+                    if count >= top:
+                        break
+
                 skip = skip + len(ret['value'])
-                if skip >= top:
+                if skip >= 20000:
                     break
-    
+
         if not len(multi_series_data):
             raise Exception("Series is empty")
         
