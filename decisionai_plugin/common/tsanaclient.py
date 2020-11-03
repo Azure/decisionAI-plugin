@@ -136,19 +136,24 @@ class TSANAClient(object):
 
             skip = 0
             count = 0
-            para = dict(metricId=data['metricId'], dimensionFilter=dim, activeSince=dt_to_str(datetime.datetime.min))
+            dedup = {}
             while True:
                 # Max series limit per call is 1k
-                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
+                ret = self.rank_series(api_endpoint, api_key, data['metricId'], dim, start_str, 1000, skip)
+                #ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
                 if len(ret['value']) == 0:
                     break
-                    
+
                 series = []
                 for s in ret['value']:
-                    s['startTime'] = start_str
-                    s['endTime'] = end_str
-                    s['returnSeriesId'] = True
-                    series.append(s)
+                    if s['seriesId'] not in dedup:
+                        s['startTime'] = start_str
+                        s['endTime'] = end_str
+                        s['dimension'] = s['dimensions']
+                        s['returnSeriesId'] = True
+                        del s['dimensions']
+                        series.append(s)
+                        dedup[s['seriesId']] = True
                 
                 if len(series) > 0:
                     granularityName = data['metricMeta']['granularityName']
@@ -191,11 +196,12 @@ class TSANAClient(object):
     #   dimensions: included dimensions
     #   start_time: inclusive, the first timestamp to be query
     #   top: max count for returned results
+    #   skip: offset
     # Return:
     #   ranked series dimensions
-    def rank_series(self, api_endpoint, api_key, metric_id, dimensions, start_time, top=10):
+    def rank_series(self, api_endpoint, api_key, metric_id, dimensions, start_time, top=10, skip=0):
         url = f'/metrics/{metric_id}/rank-series'
-        para = dict(dimensions=dimensions, count=top, startTime=start_time)
+        para = dict(dimensions=dimensions, count=top, startTime=start_time, skip=skip)
         return self.post(api_endpoint, api_key, url, data=para)
 
     # Save a training result back to TSANA
