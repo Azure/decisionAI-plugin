@@ -136,24 +136,19 @@ class TSANAClient(object):
 
             skip = 0
             count = 0
-            dedup = {}
+            para = dict(metricId=data['metricId'], dimensionFilter=dim, activeSince=start_str)
             while True:
                 # Max series limit per call is 1k
-                ret = self.rank_series(api_endpoint, api_key, data['metricId'], dim, start_str, 1000, skip)
-                #ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
+                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
                 if len(ret['value']) == 0:
                     break
 
                 series = []
                 for s in ret['value']:
-                    if s['seriesId'] not in dedup:
-                        s['startTime'] = start_str
-                        s['endTime'] = end_str
-                        s['dimension'] = s['dimensions']
-                        s['returnSeriesId'] = True
-                        del s['dimensions']
-                        series.append(s)
-                        dedup[s['seriesId']] = True
+                    s['startTime'] = start_str
+                    s['endTime'] = end_str
+                    s['returnSeriesId'] = True
+                    series.append(s)
                 
                 if len(series) > 0:
                     granularityName = data['metricMeta']['granularityName']
