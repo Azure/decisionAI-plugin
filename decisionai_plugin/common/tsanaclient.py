@@ -9,7 +9,7 @@ from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
 
 from telemetry import log
 
-REQUEST_TIMEOUT_SECONDS = 30
+REQUEST_TIMEOUT_SECONDS = 300
 
 
 def get_field_idx(fields, target):
