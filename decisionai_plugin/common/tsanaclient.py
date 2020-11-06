@@ -153,13 +153,21 @@ class TSANAClient(object):
                 if len(series) > 0:
                     granularityName = data['metricMeta']['granularityName']
                     granularityAmount = data['metricMeta']['granularityAmount']
+                    log.info("******get data begin******")
                     ret = self.post(api_endpoint, api_key, '/metrics/series/data', data=dict(value=series))
-                    sub_multi_series_data = [
-                        Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
+                    log.info("******get data end******")
+
+                    sub_multi_series_data = []
+                    for factor in ret['value']:
+                        if len(factor['values']) <= 0:
+                            continue
+                        
+                        log.info("******new series {}******".format(factor['id']['seriesId']))
+                        sub_multi_series_data.append(
+                            Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
                                 [dict(timestamp=dt_to_str(get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount), offset)), 
                                         value=y[1], **{field: y[get_field_idx(factor['fields'], field)] for field in fields_filter})
-                                for y in factor['values']])
-                        for factor in ret['value'] if len(factor['values']) > 0]
+                                for y in factor['values']]))
                     
                     count = count + len(sub_multi_series_data)
                     multi_series_data.extend(sub_multi_series_data)
