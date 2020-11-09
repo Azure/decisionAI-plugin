@@ -94,7 +94,7 @@ def get_model_list(config, subscription):
     
     for entity in entities.items:
         if 'RowKey' in entity and entity['RowKey']:
-            entity = clear_state_when_necessary(config, subscription, entity['RowKey'], entity)
+            #entity = clear_state_when_necessary(config, subscription, entity['RowKey'], entity)
             models.append(dict(modelId=entity['RowKey'],
                 groupId=entity['group_id'],
                 appId=entity['app_id'],
@@ -126,6 +126,7 @@ def clear_state_when_necessary(config, subscription, model_id, entity):
             try: 
                 monitor_entity = azure_table.get_entity(config.az_tsana_moniter_table, config.tsana_app_name, entity['owner'])
             except:
+                
                 monitor_entity = None
         else:
             monitor_entity = None
