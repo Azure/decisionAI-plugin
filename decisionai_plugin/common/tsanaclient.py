@@ -176,7 +176,7 @@ class TSANAClient(object):
                         break
 
                 skip = skip + len(ret['value'])
-                if skip >= 200000:
+                if skip >= 400000:
                     break
 
         if not len(multi_series_data):
