@@ -103,8 +103,8 @@ class PluginService():
             shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
-        log.duration("training_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], instance_id=parameters['instance']['instanceId'])
-        log.count("training_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], instance_id=parameters['instance']['instanceId'])
+        log.duration("training_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
+        log.count("training_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
 
         return STATUS_SUCCESS, ''
 
@@ -141,8 +141,8 @@ class PluginService():
             shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
-        log.duration("inference_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], instance_id=parameters['instance']['instanceId'])
-        log.count("inference_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], instance_id=parameters['instance']['instanceId'])
+        log.duration("inference_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
+        log.count("inference_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
 
         return STATUS_SUCCESS, ''
 
