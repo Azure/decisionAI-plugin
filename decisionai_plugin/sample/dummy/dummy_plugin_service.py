@@ -3,7 +3,7 @@ import json
 from flask import jsonify, make_response
 import uuid
 import time
-from datetime import datetime
+import datetime
 
 from common.plugin_service import PluginService
 from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
@@ -30,6 +30,7 @@ class DummyPluginService(PluginService):
         start = time.time()
 
         start_time = str_to_dt(parameters['startTime'])
+        start_time = start_time + datetime.timedelta(days=-3)
         end_time = str_to_dt(parameters['endTime'])
         factor_def = parameters['seriesSets']
 
@@ -41,7 +42,7 @@ class DummyPluginService(PluginService):
         sub_dir = os.path.join('temp', 'test_aidice_data')
         os.makedirs(sub_dir, exist_ok=True)
 
-        with open(os.path.join(sub_dir, 'aidice_data_{}_rows_{}_duration_{}s.txt'.format(dt_to_str_file_name(datetime.utcnow()), len(factors_data), total_time)), 'a') as text_file:
+        with open(os.path.join(sub_dir, 'aidice_data_{}_rows_{}_duration_{}s.txt'.format(dt_to_str_file_name(datetime.datetime.utcnow()), len(factors_data), total_time)), 'a') as text_file:
             for series in factors_data:
                 data_str = json.dumps(series.__dict__) + '\n'
                 text_file.write(data_str)
