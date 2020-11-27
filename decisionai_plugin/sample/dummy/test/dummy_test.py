@@ -8,6 +8,12 @@ import json
 
 environ['SERVICE_CONFIG_FILE'] = 'sample/dummy/config/service_config.yaml'
 
+environ['TELEMETRY_TYPE'] = 'mon3'
+environ['MON3_SERVER'] = 'ks2-log-dev.westus2.cloudapp.azure.com:5201'
+environ['KENSHO2_PROFILE'] = 'Plugin-Service-Prod'
+environ['MON3_APP'] = 'plugin-maga'
+environ['MON3_SERVICE'] = 'plugin-service'
+
 from sample.dummy.dummy_plugin_service import DummyPluginService
 from common.plugin_model_api import api_init, app
 from common.util.timeutil import str_to_dt
@@ -103,16 +109,128 @@ if __name__ == '__main__':
                             },
                             "hookIds": []
                         },
-                        "startTime": "2020-10-12T00:00:00Z",
-                        "endTime": "2020-10-12T21:15:00Z",
+                        "startTime": "2020-11-11T00:00:00Z",
+                        "endTime": "2020-11-12T21:15:00Z",
                         "manually": true
+                    }
+                    '''
+    request_json_2 = '''
+                    {
+                        "apiEndpoint": "https://aidice-t2-api.azurewebsites.net/",
+                        "apiKey": "e83abde1-e085-4c2d-9f03-ef61abc98e6e",
+                        "endTime": "2020-11-19T00:00:00Z",
+                        "groupId": "02c3d5a2-5aa3-441d-a5d8-aeea37add582",
+                        "groupName": "aidice-mismatch-test",
+                        "instance": {
+                            "appDisplayName": "LinearRegression",
+                            "appId": "1b7062a5-e624-498a-ae36-49e7ff961d7a",
+                            "appName": "LinearRegression",
+                            "hookIds": [],
+                            "instanceId": "23e69635-5696-437b-bcc3-1d0d9e399e0a",
+                            "instanceName": "LinearRegression_Instance_1605634501962",
+                            "params": {
+                                "metricDeficiency": 0,
+                                "tracebackWindow": 20
+                            },
+                            "remoteCandidateModelKey": "",
+                            "remoteModelKey": "",
+                            "status": "Active",
+                            "target": {
+                                "target": "JSON"
+                            }
+                        },
+                        "manually": true,
+                        "seriesSets": [{
+                                "dimensionFilter": {
+                                    "NmAgentBuildInfo": "3.301.5.54",
+                                    "NodeHardware_ClusterType": "Compute",
+                                    "NodeHardware_Generation": "4.1",
+                                    "NodeHardware_HwSkuId": "HP_Gen4.1_C1030H",
+                                    "OSHostPlugin": "144.0.10.55.OsHostPlugin-rel_m3bmc_1654.190625-1317.zip",
+                                    "OsType": "Windows_IaaS",
+                                    "RCALevel1": "FPGA",
+                                    "VMSize": "Standard_A4_v2"
+                                },
+                                "enrichmentConfigs": [{
+                                        "enrichmentConfigId": "f1ea4b37-6811-4949-90a9-fe1ad948f8c7",
+                                        "enrichmentName": "AnomalyDetection"
+                                    }
+                                ],
+                                "metricId": "39433f50-aec5-400f-89d1-688c05fb5a5a",
+                                "metricMeta": {
+                                    "dataStartFrom": "2020-09-29T19:00:00Z",
+                                    "datafeedId": "355639e3-8ce3-4780-8159-315b2afca316",
+                                    "datafeedName": "AirNMAgentUpdateEvents_v0",
+                                    "granularityAmount": 0,
+                                    "granularityName": "Hourly",
+                                    "metricName": "NoOfVMs"
+                                },
+                                "seriesSetId": "16e64ab6-3723-43ba-bcc3-65d530387da6",
+                                "seriesSetName": "AirNMAgentUpdateEvents_v0_NoOfVMs"
+                            }, {
+                                "dimensionFilter": {
+                                    "NmAgentBuildInfo": "3.301.5.54",
+                                    "NodeHardware_ClusterType": "Compute",
+                                    "NodeHardware_Generation": "4.1",
+                                    "NodeHardware_HwSkuId": "HP_Gen4.1_C1030H",
+                                    "OSHostPlugin": "144.0.10.55.OsHostPlugin-rel_m3bmc_1654.190625-1317.zip",
+                                    "OsType": "Windows_IaaS",
+                                    "RCALevel1": "FPGA",
+                                    "VMSize": "Standard_A1_v2"
+                                },
+                                "enrichmentConfigs": [{
+                                        "enrichmentConfigId": "f1ea4b37-6811-4949-90a9-fe1ad948f8c7",
+                                        "enrichmentName": "AnomalyDetection"
+                                    }
+                                ],
+                                "metricId": "39433f50-aec5-400f-89d1-688c05fb5a5a",
+                                "metricMeta": {
+                                    "dataStartFrom": "2020-09-29T19:00:00Z",
+                                    "datafeedId": "355639e3-8ce3-4780-8159-315b2afca316",
+                                    "datafeedName": "AirNMAgentUpdateEvents_v0",
+                                    "granularityAmount": 0,
+                                    "granularityName": "Hourly",
+                                    "metricName": "NoOfVMs"
+                                },
+                                "seriesSetId": "260c7b90-652d-40ae-b606-3b74cb17303d",
+                                "seriesSetName": "AirNMAgentUpdateEvents_v0_NoOfVMs"
+                            }, {
+                                "dimensionFilter": {
+                                    "NmAgentBuildInfo": "3.301.5.54",
+                                    "NodeHardware_ClusterType": "Compute",
+                                    "NodeHardware_Generation": "4.1",
+                                    "NodeHardware_HwSkuId": "HP_Gen4.1_C1030H",
+                                    "OSHostPlugin": "144.0.10.55.OsHostPlugin-rel_m3bmc_1654.190625-1317.zip",
+                                    "OsType": "Windows_IaaS",
+                                    "RCALevel1": "FPGA",
+                                    "VMSize": "Standard_A2_v2"
+                                },
+                                "enrichmentConfigs": [{
+                                        "enrichmentConfigId": "f1ea4b37-6811-4949-90a9-fe1ad948f8c7",
+                                        "enrichmentName": "AnomalyDetection"
+                                    }
+                                ],
+                                "metricId": "39433f50-aec5-400f-89d1-688c05fb5a5a",
+                                "metricMeta": {
+                                    "dataStartFrom": "2020-09-29T19:00:00Z",
+                                    "datafeedId": "355639e3-8ce3-4780-8159-315b2afca316",
+                                    "datafeedName": "AirNMAgentUpdateEvents_v0",
+                                    "granularityAmount": 0,
+                                    "granularityName": "Hourly",
+                                    "metricName": "NoOfVMs"
+                                },
+                                "seriesSetId": "3121be5e-6d2e-481d-9a05-a0b75648c823",
+                                "seriesSetName": "AirNMAgentUpdateEvents_v0_NoOfVMs"
+                            }
+                        ],
+                        "startTime": "2020-11-15T00:00:00Z"
                     }
                     '''
 
     #do inference
     for i in range(30):
-        response = client.post('/dummy/models/0000/inference', data=request_json)
-        time.sleep(120)
+        response = client.post('/dummy/models/0000/inference', data=request_json_2)
+        time.sleep(1200)
     
     #response = client.post('/dummy/models/train', data=request_json)
     #time.sleep(10)
