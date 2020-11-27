@@ -103,8 +103,8 @@ class PluginService():
             shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
-        log.duration("training_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
-        log.count("training_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
+        log.duration("training_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        log.count("training_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
 
         return STATUS_SUCCESS, ''
 
@@ -141,8 +141,8 @@ class PluginService():
             shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
-        log.duration("inference_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
-        log.count("inference_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'], instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'])
+        log.duration("inference_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        log.count("inference_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
 
         return STATUS_SUCCESS, ''
 
@@ -150,7 +150,7 @@ class PluginService():
         log.info("Training callback %s by %s , state = %s, last_error = %s" % (model_id, subscription, model_state, last_error if last_error is not None else ''))
         meta = get_meta(self.config, subscription, model_id)
         if meta is None or meta['state'] == ModelState.Deleted.name:
-            return STATUS_FAIL, 'Model is not found! '  
+            return STATUS_FAIL, 'Model is not found! '
 
         if model_state == ModelState.Ready:
             result, message = upload_model(self.config, subscription, model_id, model_dir)
