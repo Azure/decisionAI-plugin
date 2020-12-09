@@ -34,8 +34,7 @@ class DummyPluginService(PluginService):
         end_time = str_to_dt(parameters['endTime'])
         factor_def = parameters['seriesSets']
 
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], factor_def,
-                                                       start_time, end_time, 0, 40000)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], factor_def, start_time, end_time, 40000)
         print("Data item number: {}".format(len(factors_data)))
         total_time = time.time() - start
 

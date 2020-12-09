@@ -9,6 +9,8 @@ from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
 
 from telemetry import log
 
+import pandas as pd
+
 REQUEST_TIMEOUT_SECONDS = 300
 
 
@@ -115,12 +117,9 @@ class TSANAClient(object):
     #   series_sets: Array of series set
     #   start_time: inclusive, the first timestamp to be query
     #   end_time: exclusive
-    #   offset: a number will be added to each timestamp of each time-series. The unit is defined by granularity
-    #   granularityName: if Offset > 0, the granularityName is Monthly / Weekly / Daily / Hourly / Minutely / Secondly / Custom
-    #   granularityAmount: if granularityName is Custom, granularityAmount is the seconds of the exact granularity
     # Return: 
     #   A array of Series object
-    def get_timeseries(self, api_endpoint, api_key, series_sets, start_time, end_time, offset=0, top=20, fields_filter=[]):
+    def get_timeseries(self, api_endpoint, api_key, series_sets, start_time, end_time, top=20):
         end_str = dt_to_str(end_time)
         start_str = dt_to_str(start_time)
 
@@ -150,21 +149,14 @@ class TSANAClient(object):
                     s['returnSeriesId'] = True
                     series.append(s)
                 
-                if len(series) > 0:
-                    granularityName = data['metricMeta']['granularityName']
-                    granularityAmount = data['metricMeta']['granularityAmount']
+                if len(series) > 0:                    
                     ret = self.post(api_endpoint, api_key, '/metrics/series/data', data=dict(value=series))
-
                     sub_multi_series_data = []
                     for factor in ret['value']:
                         if len(factor['values']) <= 0:
                             continue
 
-                        sub_multi_series_data.append(
-                            Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'],
-                                [dict(timestamp=dt_to_str(get_time_offset(str_to_dt(y[0]), (granularityName, granularityAmount), offset)), 
-                                        value=y[1], **{field: y[get_field_idx(factor['fields'], field)] for field in fields_filter})
-                                for y in factor['values']]))
+                        sub_multi_series_data.append(Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'], factor['fields'], factor['values']))
                     
                     count = count + len(sub_multi_series_data)
                     multi_series_data.extend(sub_multi_series_data)
