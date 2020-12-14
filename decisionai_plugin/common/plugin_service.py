@@ -118,6 +118,10 @@ class PluginService():
 
         log.info("Start inference wrapper %s by %s " % (model_id, subscription))
         try:
+            result, message = self.do_verify(parameters, Context(subscription, model_id))
+            if result != STATUS_SUCCESS:
+                raise Exception('Verify failed! ' + message)
+
             model_dir = os.path.join(self.config.model_dir, subscription + '_' + model_id + '_' + str(time.time()))
             os.makedirs(model_dir, exist_ok=True)
 
@@ -204,10 +208,7 @@ class PluginService():
         request_body = json.loads(request.data)
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        result, message = self.do_verify(request_body, Context(subscription, model_id))
-        if result != STATUS_SUCCESS:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Failed.name)), 400)
-
+        
         if self.trainable:
             meta = get_meta(self.config, subscription, model_id)
             if meta is None:
