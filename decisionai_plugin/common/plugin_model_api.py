@@ -120,9 +120,9 @@ class PluginModelListAPI(Resource):
     def get(self):
         return self.__plugin_service.list_models(request)
 
-def api_init(plugin_name, plugin_service:PluginService):
-    api.add_resource(PluginModelListAPI, '/{}/models'.format(plugin_name), resource_class_kwargs={'plugin_service': plugin_service})
-    api.add_resource(PluginModelAPI, '/{}/models/<model_id>'.format(plugin_name), resource_class_kwargs={'plugin_service': plugin_service})
-    api.add_resource(PluginModelTrainAPI, '/{}/models/train'.format(plugin_name), resource_class_kwargs={'plugin_service': plugin_service})
-    api.add_resource(PluginModelInferenceAPI, '/{}/models/<model_id>/inference'.format(plugin_name), resource_class_kwargs={'plugin_service': plugin_service})
-    api.add_resource(PluginModelParameterAPI, '/{}/parameters'.format(plugin_name), resource_class_kwargs={'plugin_service': plugin_service})
+def api_init(plugin_service:PluginService):
+    api.add_resource(PluginModelListAPI, '/models', resource_class_kwargs={'plugin_service': plugin_service})
+    api.add_resource(PluginModelAPI, '/models/<model_id>', resource_class_kwargs={'plugin_service': plugin_service})
+    api.add_resource(PluginModelTrainAPI, '/models/train', resource_class_kwargs={'plugin_service': plugin_service})
+    api.add_resource(PluginModelInferenceAPI, '/models/<model_id>/inference', resource_class_kwargs={'plugin_service': plugin_service})
+    api.add_resource(PluginModelParameterAPI, '/parameters', resource_class_kwargs={'plugin_service': plugin_service})
