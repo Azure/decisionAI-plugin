@@ -260,6 +260,9 @@ class TSANAClient(object):
         except Exception as e:
             return STATUS_FAIL, str(e)
 
+    def save_inference_status(self, parameters, status):
+        return STATUS_SUCCESS, ''
+
     def get_inference_result(self, parameters):
         try: 
             ret = self.get(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' 
@@ -286,10 +289,12 @@ class TSANAClient(object):
     #   dimensions: a dict includes dimension name and value
     #   timestamps: an array of timestamps
     #   values: an array of inference result values
+    #   fields: an array of fields
+    #   fieldValues: a 2-d array of field values
     # Return:
     #   result: STATE_SUCCESS / STATE_FAIL
     #   message: description for the result
-    def save_data_points(self, parameters, metricId, dimensions, timestamps, values):
+    def save_data_points(self, parameters, metricId, dimensions, timestamps, values, fields, fieldValues):
         try: 
             if len(values) <= 0: 
                 return STATUS_SUCCESS, ''
@@ -298,7 +303,9 @@ class TSANAClient(object):
                 "metricId": metricId, 
                 "dimensions": dimensions,
                 "timestamps": timestamps, 
-                "values": values
+                "values": values,
+                "fields": fields,
+                "fieldValues": fieldValues
             }
             print(json.dumps(body))
 

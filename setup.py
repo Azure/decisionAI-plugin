@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.45",
+    version="0.0.46",
     keywords = ("pip", "timeseries", "plugin"),
     description = "Time series analysis plugin",
     long_description = "An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
@@ -48,7 +48,7 @@ setup(
         #'greenlet==0.4.13',
 		'apscheduler',
         'numpy==1.17.3',
-        'pandas==0.23.4',
+        'pandas==1.0.0',
     ],
 	include_package_data=True
 )

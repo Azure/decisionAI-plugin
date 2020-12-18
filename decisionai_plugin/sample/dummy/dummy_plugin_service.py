@@ -5,9 +5,9 @@ import uuid
 import time
 import datetime
 
-from common.plugin_service import PluginService
-from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
-from common.util.timeutil import dt_to_str, str_to_dt, dt_to_str_file_name
+from decisionai_plugin.common.plugin_service import PluginService
+from decisionai_plugin.common.util.constant import STATUS_SUCCESS, STATUS_FAIL
+from decisionai_plugin.common.util.timeutil import dt_to_str, str_to_dt, dt_to_str_file_name
 
 class DummyPluginService(PluginService):
 

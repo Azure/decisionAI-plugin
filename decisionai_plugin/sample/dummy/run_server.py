@@ -7,11 +7,11 @@ from os import environ
 environ['SERVICE_CONFIG_FILE'] = 'sample/dummy/config/service_config.yaml'
 
 from dummy_plugin_service import DummyPluginService
-from common.plugin_model_api import api_init, app
+from decisionai_plugin.common.plugin_model_api import api_init, app
 
 if __name__ == '__main__':
     HOST = environ.get('SERVER_HOST', '0.0.0.0')
     PORT = environ.get('SERVER_PORT', 56789)
     dummy = DummyPluginService()
-    api_init('dummy', dummy)
+    api_init(dummy)
     app.run(HOST, PORT, threaded=True, use_reloader=False)
