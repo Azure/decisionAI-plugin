@@ -1,6 +1,7 @@
 import enum
 
 class ModelState(enum.Enum):
+    Pending = 0
     Training = 1
     Ready = 2
     Deleted = 3

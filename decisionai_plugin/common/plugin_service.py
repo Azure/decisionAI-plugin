@@ -94,8 +94,10 @@ class PluginService():
             if 'dataRetrieving' in parameters and parameters['dataRetrieving']:
                 start_time, end_time = self.get_data_time_range(parameters, True)
                 series = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], parameters['seriesSets'], start_time, end_time)
+                update_state(self.config, subscription, model_id, ModelState.Training)
                 result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id))
             else:
+                update_state(self.config, subscription, model_id, ModelState.Training)
                 result, message = self.do_train(model_dir, parameters, None, Context(subscription, model_id))
             
             if result == STATUS_SUCCESS:
