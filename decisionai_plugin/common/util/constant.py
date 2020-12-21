@@ -8,6 +8,7 @@ class ModelState(enum.Enum):
     Failed = 4
 
 class InferenceState(enum.Enum):
+    Pending = 0
     Running = 1
     Ready = 2
     Failed = 3

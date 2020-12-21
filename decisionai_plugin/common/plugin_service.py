@@ -83,7 +83,7 @@ class PluginService():
     def get_data_time_range(self, parameters, is_training=False):
         return str_to_dt(parameters['startTime']), str_to_dt(parameters['endTime'])
 
-    def train_wrapper(self, subscription, model_id, parameters, callback):
+    def train_wrapper(self, subscription, model_id, task_id, parameters, callback):
         start = time.time()
 
         log.info("Start train wrapper for model %s by %s " % (model_id, subscription))
@@ -95,10 +95,10 @@ class PluginService():
                 start_time, end_time = self.get_data_time_range(parameters, True)
                 series = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], parameters['seriesSets'], start_time, end_time)
                 update_state(self.config, subscription, model_id, ModelState.Training)
-                result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id))
+                result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
             else:
                 update_state(self.config, subscription, model_id, ModelState.Training)
-                result, message = self.do_train(model_dir, parameters, None, Context(subscription, model_id))
+                result, message = self.do_train(model_dir, parameters, None, Context(subscription, model_id, task_id))
             
             if result == STATUS_SUCCESS:
                 if callback is not None:
@@ -122,12 +122,14 @@ class PluginService():
 
     # inference_window: 30
     # endTime: endtime
-    def inference_wrapper(self, subscription, model_id, parameters, callback):
+    def inference_wrapper(self, subscription, model_id, task_id, parameters, callback):
         start = time.time()
 
         log.info("Start inference wrapper %s by %s " % (model_id, subscription))
         try:
-            result, message = self.do_verify(parameters, Context(subscription, model_id))
+            self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Pending.name)
+
+            result, message = self.do_verify(parameters, Context(subscription, model_id, task_id))
             if result != STATUS_SUCCESS:
                 raise Exception('Verify failed! ' + message)
 
@@ -137,24 +139,21 @@ class PluginService():
             if self.trainable:
                 download_model(self.config, subscription, model_id, model_dir)
             
+            start_time, end_time = self.get_data_time_range(parameters)
             if 'dataRetrieving' in parameters and parameters['dataRetrieving']:
-                start_time, end_time = self.get_data_time_range(parameters)
-                series = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], parameters['seriesSets'], start_time, end_time)
-                result, values, message = self.do_inference(model_dir, parameters, series, Context(subscription, model_id))
+                series = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], parameters['seriesSets'], start_time, end_time)                
             else:
-                result, values, message = self.do_inference(model_dir, parameters, None, Context(subscription, model_id))
+                series = None
+
+            self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Running.name)
+            result, values, message = self.do_inference(model_dir, parameters, series, Context(subscription, model_id, task_id))
 
             if callback is not None:
                 callback(subscription, model_id, parameters, result, values, message)
         except Exception as e:
             error_message = str(e) + '\n' + traceback.format_exc()
-            results = [{'timestamp': parameters['endTime'], 'status': InferenceState.Failed.name, 'result': dict(errorMessage=error_message)}]
-            self.tsanaclient.save_inference_result(parameters, results)
-
             if callback is not None:
                 callback(subscription, model_id, parameters, STATUS_FAIL, None, error_message)
-            
-            result = STATUS_FAIL
         finally:
             shutil.rmtree(model_dir, ignore_errors=True)
 
@@ -165,7 +164,6 @@ class PluginService():
         return STATUS_SUCCESS, ''
 
     def train_callback(self, subscription, model_id, model_dir, parameters, model_state, last_error=None):
-        log.info("Training callback %s by %s , state = %s, last_error = %s" % (model_id, subscription, model_state, last_error if last_error is not None else ''))
         meta = get_meta(self.config, subscription, model_id)
         if meta is None or meta['state'] == ModelState.Deleted.name:
             return STATUS_FAIL, 'Model is not found! '
@@ -177,14 +175,22 @@ class PluginService():
                 last_error = 'Model storage failed! ' + message
 
         update_state(self.config, subscription, model_id, model_state, None, last_error)
-        return self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
+        self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
 
-    def inference_callback(self, subscription, model_id, parameters, result, values, last_error=None):
+        log.info("Training callback %s by %s , state = %s, last_error = %s" % (model_id, subscription, model_state, last_error if last_error is not None else ''))
+
+    def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
         if result == STATUS_SUCCESS:
             for value in values:
                 result, last_error = self.tsanaclient.save_data_points(parameters, value['metricId'], value['dimension'], value['timestamps'], value['values'], value['fields'], value['fieldValues'])
                 if result != STATUS_SUCCESS:
-                    raise Exception(last_error)
+                    break
+
+        if result == STATUS_SUCCESS:
+            self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
+        else:
+            self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
+
         log.info ("Inference callback %s by %s , result = %s, last_error = %s" % (model_id, subscription, result, last_error if last_error is not None else ''))
 
     def train(self, request):
@@ -208,20 +214,21 @@ class PluginService():
 
         log.info('Create training task')
         try:
+            task_id = str(uuid.uuid1())
             if 'modelId' in request_body and request_body['modelId']:
                 model_id = request_body['modelId']
             else:
                 model_id = str(uuid.uuid1())
             insert_meta(self.config, subscription, model_id, request_body)
             meta = get_meta(self.config, subscription, model_id)
-            asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_id, request_body, self.train_callback))
-            return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
-        except Exception as e: 
+            asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_id, task_id, request_body, self.train_callback))
+            return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
+        except Exception as e:
             meta = get_meta(self.config, subscription, model_id)
             error_message = str(e) + '\n' + traceback.format_exc()
             if meta is not None: 
                 update_state(self.config, subscription, model_id, ModelState.Failed, None, error_message)
-            return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_FAIL, message='Fail to create new task ' + error_message, modelState=ModelState.Failed.name)), 400)
+            return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_FAIL, message='Fail to create new task ' + error_message, modelState=ModelState.Failed.name)), 400)
 
     def inference(self, request, model_id):
         request_body = json.loads(request.data)
@@ -247,8 +254,9 @@ class PluginService():
                     return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_FAIL, message='Inconsistent series sets or params!', modelState=meta['state'])), 400)
 
         log.info('Create inference task')
-        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_id, request_body, self.inference_callback))
-        return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_SUCCESS, message='Inference task created', modelState=ModelState.Ready.name)), 201)
+        task_id = str(uuid.uuid1())
+        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_id, task_id, request_body, self.inference_callback))
+        return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Inference task created', modelState=ModelState.Ready.name)), 201)
 
     def state(self, request, model_id):
         if not self.trainable:

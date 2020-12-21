@@ -260,9 +260,44 @@ class TSANAClient(object):
         except Exception as e:
             return STATUS_FAIL, str(e)
 
-    def save_inference_status(self, parameters, status):
-        return STATUS_SUCCESS, ''
+    # Save a inference status back to TSANA
+    # Parameters: 
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #       instance: instance object, which is copied from the inference request, or from the entity
+    #   status: InferenceState:Pending, Running, Ready, Failed
+    #   last_error: last error message
+    # Return:
+    #   result: STATE_SUCCESS / STATE_FAIL
+    #   message: description for the result
+    def save_inference_status(self, task_id, parameters, status, last_error=None):
+        try: 
 
+            body = {
+                'operation': 'Inference',
+                'context': parameters,
+                'status': status,
+                'lastError': last_error if last_error is not None else ''
+                }
+               
+            self.post(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
+            return STATUS_SUCCESS, ''
+        except Exception as e:
+            return STATUS_FAIL, str(e)
+
+    # Get inference result from TSANA
+    # Parameters: 
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #       instance: instance object, which is copied from the inference request, or from the entity
+    # Return:
+    #   result: STATE_SUCCESS / STATE_FAIL
+    #   message: description for the result
+    #   value: inference result array
     def get_inference_result(self, parameters):
         try: 
             ret = self.get(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' 
@@ -331,3 +366,5 @@ class TSANAClient(object):
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, repr(e)
+
+
