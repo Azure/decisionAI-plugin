@@ -73,15 +73,12 @@ class LrPluginService(PluginService):
 
         start_time, end_time, gran = self.get_inference_time_range(parameters)
         traceback_window = parameters['instance']['params']['tracebackWindow']
-        metricId = parameters['instance']['target']['metrics'][0]['metricId']
-        fields = ['mse', 'r2score']
 
         for factor in series:
             timestamps = []
             values = []
-            mse = []
-            r2score = []
-            fieldValues = [mse, r2score]
+            mses = []
+            r2scores = []
 
             df = pd.DataFrame(factor.value, columns=factor.fields)
             df = df[['time', '__VAL__']]
@@ -98,10 +95,12 @@ class LrPluginService(PluginService):
 
                 timestamps.append(dt_to_str(timestamp))
                 values.append(model.predict(np.array([timestamp.timestamp()]).reshape(-1,1))[0][0])
-                mse.append(mean_squared_error(y, y_new))
-                r2score.append(r2_score(y, y_new))
+                mses.append(mean_squared_error(y, y_new))
+                r2scores.append(r2_score(y, y_new))
 
             dimension = dict(seriesId=factor.series_id)
-            results.append(dict(metricId=metricId, dimension=dimension, timestamps=timestamps, values=values, fields=fields, fieldValues=fieldValues))        
+            results.append(dict(metricId=parameters['instance']['target']['metrics'][0]['metricId'], dimension=dimension, timestamps=timestamps, values=values))
+            results.append(dict(metricId=parameters['instance']['target']['metrics'][1]['metricId'], dimension=dimension, timestamps=timestamps, values=mses))
+            results.append(dict(metricId=parameters['instance']['target']['metrics'][2]['metricId'], dimension=dimension, timestamps=timestamps, values=r2scores))
 
         return STATUS_SUCCESS, results, ''
