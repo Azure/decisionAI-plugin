@@ -115,8 +115,8 @@ class PluginService():
             shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
-        log.duration("training_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
-        log.count("training_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        log.duration("training_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        log.count("training_task_count", 1,  model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
 
         return STATUS_SUCCESS, ''
 
@@ -158,8 +158,8 @@ class PluginService():
             shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
-        log.duration("inference_task_duration", total_time, model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
-        log.count("inference_task_count", 1,  model_id=model_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        log.duration("inference_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        log.count("inference_task_count", 1,  model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
 
         return STATUS_SUCCESS, ''
 
@@ -182,7 +182,8 @@ class PluginService():
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
         if result == STATUS_SUCCESS:
             for value in values:
-                result, last_error = self.tsanaclient.save_data_points(parameters, value['metricId'], value['dimension'], value['timestamps'], value['values'], value['fields'], value['fieldValues'])
+                result, last_error = self.tsanaclient.save_data_points(parameters, value['metricId'], value['dimension'], value['timestamps'], value['values'], 
+                                                                        value['fields'] if 'fields' in value else None, value['fieldValues'] if 'fieldValues' in value else None)
                 if result != STATUS_SUCCESS:
                     break
 
@@ -197,12 +198,12 @@ class PluginService():
         request_body = json.loads(request.data)
         instance_id = request_body['instance']['instanceId']
         if not self.trainable:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
 
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        result, message = self.do_verify(request_body, Context(subscription, ''))
+        result, message = self.do_verify(request_body, Context(subscription, '', ''))
         if result != STATUS_SUCCESS:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
 
         models_in_train = []
         for model in get_model_list(self.config, subscription):
@@ -210,7 +211,7 @@ class PluginService():
                 models_in_train.append(model['modelId'])
 
         if len(models_in_train) >= self.config.models_in_training_limit_per_instance:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_FAIL, message='Models in training limit reached! Abort training this time.', modelState=ModelState.Deleted.name)), 400)
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Models in training limit reached! Abort training this time.', modelState=ModelState.Deleted.name)), 400)
 
         log.info('Create training task')
         try:
@@ -238,10 +239,10 @@ class PluginService():
         if self.trainable:
             meta = get_meta(self.config, subscription, model_id)
             if meta is None:
-                return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
+                return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
                 
             if meta['state'] != ModelState.Ready.name:
-                return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_FAIL, message='Cannot do inference right now, status is ' + meta['state'], modelState=meta['state'])), 400)
+                return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Cannot do inference right now, status is ' + meta['state'], modelState=meta['state'])), 400)
 
             current_set = json.dumps(json.loads(meta['series_set']), sort_keys=True)
             current_params = json.dumps(json.loads(meta['para']), sort_keys=True)
@@ -250,8 +251,8 @@ class PluginService():
             new_params = json.dumps(request_body['instance']['params'], sort_keys=True)
 
             if current_set != new_set or current_params != new_params:
-                if self.need_retrain(json.loads(meta['series_set']), json.loads(meta['para']), request_body['seriesSets'], request_body['instance']['params'], Context(subscription, model_id)):
-                    return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, result=STATUS_FAIL, message='Inconsistent series sets or params!', modelState=meta['state'])), 400)
+                if self.need_retrain(json.loads(meta['series_set']), json.loads(meta['para']), request_body['seriesSets'], request_body['instance']['params'], Context(subscription, model_id, '')):
+                    return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Inconsistent series sets or params!', modelState=meta['state'])), 400)
 
         log.info('Create inference task')
         task_id = str(uuid.uuid1())
@@ -260,19 +261,19 @@ class PluginService():
 
     def state(self, request, model_id):
         if not self.trainable:
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
 
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
             meta = get_meta(self.config, subscription, model_id)
             if meta == None:
-                return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
+                return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
 
             meta = clear_state_when_necessary(self.config, subscription, model_id, meta)
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message=meta['last_error'] if 'last_error' in meta else '', modelState=meta['state'])), 200)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_SUCCESS, message=meta['last_error'] if 'last_error' in meta else '', modelState=meta['state'])), 200)
         except Exception as e:
             error_message = str(e) + '\n' + traceback.format_exc()
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=error_message, modelState=ModelState.Failed.name)), 400)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_FAIL, message=error_message, modelState=ModelState.Failed.name)), 400)
         
     def list_models(self, request):
         subscription = request.headers.get('apim-subscription-id', 'Official')
@@ -280,26 +281,26 @@ class PluginService():
 
     def delete(self, request, model_id):
         if not self.trainable:
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model is not trainable')), 200)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_SUCCESS, message='Model is not trainable')), 200)
 
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
             result, message = self.do_delete(subscription, model_id)
             if result == STATUS_SUCCESS:
                 update_state(self.config, subscription, model_id, ModelState.Deleted)
-                return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
+                return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
             else:
                 raise Exception(message)
         except Exception as e:
             error_message = str(e) + '\n' + traceback.format_exc()
-            return make_response(jsonify(dict(instanceId='', modelId=model_id, result=STATUS_FAIL, message=error_message, modelState=ModelState.Failed.name)), 400)
+            return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_FAIL, message=error_message, modelState=ModelState.Failed.name)), 400)
 
     def verify(self, request):
         request_body = json.loads(request.data)
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        result, message = self.do_verify(request_body, Context(subscription, ''))
+        result, message = self.do_verify(request_body, Context(subscription, '', ''))
         if result != STATUS_SUCCESS:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
         else:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', result=STATUS_SUCCESS, message='Verify successfully! ' + message, modelState=ModelState.Deleted.name)), 200)
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Verify successfully! ' + message, modelState=ModelState.Deleted.name)), 200)

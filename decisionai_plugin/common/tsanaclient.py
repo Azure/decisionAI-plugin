@@ -335,13 +335,16 @@ class TSANAClient(object):
                 return STATUS_SUCCESS, ''
 
             body = {
-                "metricId": metricId, 
-                "dimensions": dimensions,
-                "timestamps": timestamps, 
-                "values": values,
-                "fields": fields,
-                "fieldValues": fieldValues
+                'metricId': metricId, 
+                'dimensions': dimensions,
+                'timestamps': timestamps, 
+                'values': values
             }
+
+            if fields != None and fieldValues != None:
+                body['fields'] = fields,
+                body['fieldValues'] = fieldValues
+                
             print(json.dumps(body))
 
             self.post(parameters['apiEndpoint'], parameters['apiKey'], '/pushData', body)
