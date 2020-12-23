@@ -252,7 +252,7 @@ class TSANAClient(object):
                     body['results'].append({
                         'params': parameters['instance']['params'],
                         'timestamp': item['timestamp'],
-                        'result': item,
+                        'result': item['value'],
                         'status': item['status']
                     })
                 self.post(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
@@ -344,7 +344,7 @@ class TSANAClient(object):
             if fields != None and fieldValues != None:
                 body['fields'] = fields,
                 body['fieldValues'] = fieldValues
-                
+
             print(json.dumps(body))
 
             self.post(parameters['apiEndpoint'], parameters['apiKey'], '/pushData', body)
