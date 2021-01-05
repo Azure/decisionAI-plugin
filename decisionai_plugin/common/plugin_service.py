@@ -118,10 +118,6 @@ class PluginService():
 
         log.info("Start inference wrapper %s by %s " % (model_id, subscription))
         try:
-            result, message = self.do_verify(parameters, Context(subscription, model_id))
-            if result != STATUS_SUCCESS:
-                raise Exception('Verify failed! ' + message)
-
             model_dir = os.path.join(self.config.model_dir, subscription + '_' + model_id + '_' + str(time.time()))
             os.makedirs(model_dir, exist_ok=True)
 
