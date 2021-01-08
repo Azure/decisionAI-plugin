@@ -163,7 +163,7 @@ class PluginService():
 
         return STATUS_SUCCESS, ''
 
-    def train_callback(self, subscription, model_id, model_dir, parameters, model_state, last_error=None):
+    def train_callback(self, subscription, model_id, task_id, model_dir, parameters, model_state, last_error=None):
         meta = get_meta(self.config, subscription, model_id)
         if meta is None or meta['state'] == ModelState.Deleted.name:
             return STATUS_FAIL, 'Model is not found! '
@@ -177,7 +177,7 @@ class PluginService():
         update_state(self.config, subscription, model_id, model_state, None, last_error)
         self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
 
-        log.info("Training callback %s by %s , state = %s, last_error = %s" % (model_id, subscription, model_state, last_error if last_error is not None else ''))
+        log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
 
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
         if result == STATUS_SUCCESS:
@@ -192,7 +192,7 @@ class PluginService():
         else:
             self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
 
-        log.info ("Inference callback %s by %s , result = %s, last_error = %s" % (model_id, subscription, result, last_error if last_error is not None else ''))
+        log.info ("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, last_error if last_error is not None else ''))
 
     def train(self, request):
         request_body = json.loads(request.data)
