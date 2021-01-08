@@ -234,8 +234,7 @@ class TSANAClient(object):
     #   result: STATE_SUCCESS / STATE_FAIL
     #   message: description for the result
     def save_inference_result(self, parameters, result, batch_size=1000):
-        try: 
-
+        try:
             if len(result) <= 0: 
                 return STATUS_SUCCESS, ''
 
@@ -274,7 +273,6 @@ class TSANAClient(object):
     #   message: description for the result
     def save_inference_status(self, task_id, parameters, status, last_error=None):
         try: 
-
             body = {
                 'operation': 'Inference',
                 'context': parameters,
@@ -344,8 +342,6 @@ class TSANAClient(object):
             if fields != None and fieldValues != None:
                 body['fields'] = fields,
                 body['fieldValues'] = fieldValues
-
-            print(json.dumps(body))
 
             self.post(parameters['apiEndpoint'], parameters['apiKey'], '/pushData', body)
             return STATUS_SUCCESS, ''
