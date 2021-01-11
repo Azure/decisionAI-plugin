@@ -26,7 +26,7 @@ class DummyPluginService(PluginService):
         time.sleep(2)
         return STATUS_SUCCESS, ''
 
-    def do_inference(self, model_dir, parameters, context):
+    def do_inference(self, model_dir, parameters, series, context):
         start = time.time()
 
         start_time = str_to_dt(parameters['startTime'])

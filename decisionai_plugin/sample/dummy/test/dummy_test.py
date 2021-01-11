@@ -355,8 +355,8 @@ if __name__ == '__main__':
     }
     '''
 
-    data_body = json.loads(data_point_request)
-    status, message = dummy.tsanaclient.save_data_points(request_body, request_body['instance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
+    #data_body = json.loads(data_point_request)
+    #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['instance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
     
     #do inference
     for i in range(30):
