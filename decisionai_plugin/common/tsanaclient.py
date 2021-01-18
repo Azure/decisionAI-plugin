@@ -137,9 +137,13 @@ class TSANAClient(object):
             skip = 0
             count = 0
             para = dict(metricId=data['metricId'], dimensionFilter=dim, activeSince=start_str)
+            gran_info = (data['metricMeta']['granularityName'], data['metricMeta']['granularityAmount'])
+            data_point_num = get_time_list(start_time, end_time, gran_info)
+
             while True:
-                # Max series limit per call is 1k
-                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
+                # Max data points per call is 10000
+                series_per_call_limit = max(10000 // data_point_num, 1)
+                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_per_call_limit), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -173,7 +177,8 @@ class TSANAClient(object):
                         break
 
                 skip = skip + len(ret['value'])
-                if skip >= 400000:
+                # Max data points limit is 4000000
+                if skip * data_point_num >= 4000000:
                     break
 
         if not len(multi_series_data):
