@@ -294,21 +294,28 @@ class TSANAClient(object):
     #   dimensions: a dict includes dimension name and value
     #   timestamps: an array of timestamps
     #   values: an array of inference result values
+    #   fields: an array of field names
+    #   field_values: an 2-d array of field values corresponding with fields
+    #   push_data_type: 'DatabaseOnly'/'AnomalyDetection', default is 'DatabaseOnly'
     # Return:
     #   result: STATE_SUCCESS / STATE_FAIL
     #   message: description for the result
-    def save_data_points(self, parameters, metricId, dimensions, timestamps, values):
+    def save_data_points(self, parameters, metric_id, dimensions, timestamps, values, fields=None, field_values=None, push_data_type='DatabaseOnly'):
         try: 
             if len(values) <= 0: 
                 return STATUS_SUCCESS, ''
 
             body = {
-                "metricId": metricId, 
+                "metricId": metric_id,
                 "dimensions": dimensions,
                 "timestamps": timestamps, 
-                "values": values
+                "values": values,
+                "pushDataType": push_data_type
             }
-            print(json.dumps(body))
+
+            if fields and len(fields) > 0:
+                body['fields'] = fields
+                body['fieldValues'] = field_values
 
             self.post(parameters['apiEndpoint'], parameters['apiKey'], '/pushData', body)
             return STATUS_SUCCESS, ''
