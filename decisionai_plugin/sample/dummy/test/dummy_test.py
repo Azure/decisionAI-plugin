@@ -9,10 +9,10 @@ import json
 environ['SERVICE_CONFIG_FILE'] = 'sample/dummy/config/service_config.yaml'
 
 #environ['TELEMETRY_TYPE'] = 'mon3'
-environ['MON3_SERVER'] = 'ks2-log-dev.westus2.cloudapp.azure.com:5201'
-environ['KENSHO2_PROFILE'] = 'Plugin-Service-Prod'
-environ['MON3_APP'] = 'plugin-maga'
-environ['MON3_SERVICE'] = 'plugin-service'
+#environ['MON3_SERVER'] = 'ks2-log-dev.westus2.cloudapp.azure.com:5201'
+#environ['KENSHO2_PROFILE'] = 'Plugin-Service-PPE'
+#environ['MON3_APP'] = 'plugin-maga'
+#environ['MON3_SERVICE'] = 'plugin-service'
 
 from sample.dummy.dummy_plugin_service import DummyPluginService
 from decisionai_plugin.common.plugin_model_api import api_init, app
@@ -358,9 +358,66 @@ if __name__ == '__main__':
     #data_body = json.loads(data_point_request)
     #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['instance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
     
+    request_json_3 = '''
+        {
+            "apiEndpoint": "https://kensho2-ppe-api.azurewebsites.net/",
+            "apiKey": "3477e6f3-4570-4508-99f7-5fce091981af",
+            "endTime": "2020-12-23T12:25:00Z",
+            "groupId": "12e8b88c-bb42-44b9-bec7-aed0f1f18ac4",
+            "groupName": "yongw/test",
+            "instance": {
+                "appDisplayName": "MagaPluginTest",
+                "appId": "32a6f4e7-6f5a-44a6-85f8-f3af6ff985f5",
+                "appName": "MAGAplugin",
+                "appType": "External",
+                "hookIds": [],
+                "instanceId": "b24b4d3a-1ec8-4578-9400-45cc53c928f5",
+                "instanceName": "MagaPluginTest_Instance_1608726154339",
+                "params": {
+                    "alertRatio": 0.8,
+                    "alertWindow": 5,
+                    "fillMergeNAMethod": "Linear",
+                    "fillMergeNAValue": 0,
+                    "mergeMode": "Outer",
+                    "metricDeficiency": 0,
+                    "sensitivity": 70,
+                    "snooze": 0,
+                    "tracebackWindow": 28
+                },
+                "remoteCandidateModelKey": "",
+                "remoteModelKey": "9488b366-4519-11eb-a9b5-3e1488472c7e",
+                "status": "Active",
+                "target": {
+                    "target": "JSON"
+                }
+            },
+            "manually": false,
+            "seriesSets": [{
+                    "dimensionFilter": {},
+                    "enrichmentConfigs": [{
+                            "enrichmentConfigId": "cdb515b3-b626-4a93-925c-5b6469509005",
+                            "enrichmentName": "AnomalyDetection"
+                        }
+                    ],
+                    "metricId": "ea88fab4-f7f9-484a-94ce-a2181d2169d1",
+                    "metricMeta": {
+                        "dataStartFrom": "2020-07-11T05:00:00Z",
+                        "datafeedId": "8157e27b-d897-4973-8b75-f45c1937a82d",
+                        "datafeedName": "yongw/5min",
+                        "granularityAmount": 300,
+                        "granularityName": "Custom",
+                        "metricName": "dayOfWeekRatio"
+                    },
+                    "seriesSetId": "fefad192-1b75-4268-8329-b5258ad731e3",
+                    "seriesSetName": "yongw/5min_dayOfWeekRatio"
+                }
+            ],
+            "startTime": "2020-12-23T12:25:00Z"
+        }
+        '''
     #do inference
     for i in range(30):
-        response = client.post('/models/0000/inference', data=request_json)
+        response = client.post('/models/0000/inference', data=request_json_3)
         time.sleep(1200)
     
     

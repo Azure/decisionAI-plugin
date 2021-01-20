@@ -120,10 +120,16 @@ class TSANAClient(object):
     # Return: 
     #   A array of Series object
     def get_timeseries(self, api_endpoint, api_key, series_sets, start_time, end_time, top=20):
+
+        if start_time > end_time:
+            raise Exception('start_time should be less than or equal to end_time')
+
         end_str = dt_to_str(end_time)
         start_str = dt_to_str(start_time)
 
         multi_series_data = []
+        total_point_num = 0
+
         # Query each series's tag
         for data in series_sets:
             dim = {}
@@ -136,9 +142,13 @@ class TSANAClient(object):
             skip = 0
             count = 0
             para = dict(metricId=data['metricId'], dimensionFilter=dim, activeSince=start_str)
+            gran_info = (data['metricMeta']['granularityName'], data['metricMeta']['granularityAmount'])
+            data_point_num_per_series = len(get_time_list(start_time, end_time, gran_info))
+            series_limit_per_call = min(max(100000 // data_point_num_per_series, 1), 1000)
+
             while True:
-                # Max series limit per call is 1k
-                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, 1000), data=para)
+                # Max data points per call is 100000
+                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -158,15 +168,19 @@ class TSANAClient(object):
 
                         sub_multi_series_data.append(Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'], factor['fields'], factor['values']))
                     
-                    count = count + len(sub_multi_series_data)
                     multi_series_data.extend(sub_multi_series_data)
+                    count += len(sub_multi_series_data)
+                    total_point_num += count * data_point_num_per_series
 
                     if count >= top:
                         break
-
+                
                 skip = skip + len(ret['value'])
-                if skip >= 400000:
-                    break
+                
+            # Max data points limit is 4000000
+            if total_point_num >= 4000000:
+                log.info("Reach total point number limit 4000000.")
+                break
 
         if not len(multi_series_data):
             raise Exception("Series is empty")
@@ -328,20 +342,19 @@ class TSANAClient(object):
     # Return:
     #   result: STATE_SUCCESS / STATE_FAIL
     #   message: description for the result
-    def save_data_points(self, parameters, metric_id, dimensions, timestamps, values, fields=None, field_values=None, push_data_type='DatabaseOnly'):
+    def save_data_points(self, parameters, metric_id, dimensions, timestamps, values, fields=None, field_values=None):
         try: 
             if len(values) <= 0: 
-                return STATUS_SUCCESS, ''
+                raise Exception('empty values')
 
             body = {
                 "metricId": metric_id,
                 "dimensions": dimensions,
                 "timestamps": timestamps, 
-                "values": values,
-                "pushDataType": push_data_type
+                "values": values
             }
 
-            if fields and len(fields) > 0:
+            if fields and len(fields) > 0 and field_values and len(field_values) > 0:
                 body['fields'] = fields
                 body['fieldValues'] = field_values
 
