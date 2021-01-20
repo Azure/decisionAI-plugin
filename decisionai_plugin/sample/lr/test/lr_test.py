@@ -21,7 +21,7 @@ from common.util.constant import STATUS_SUCCESS, STATUS_FAIL, InferenceState
 if __name__ == '__main__':
     
     lr = LrPluginService()
-    api_init('lr', lr)
+    api_init(lr)
     app.testing = True
     client = app.test_client()
     response = client.get('/')
@@ -132,11 +132,10 @@ if __name__ == '__main__':
     
     # generate request sample
     request_sample = generate_request(lr, request_body['apiEndpoint'], request_body['apiKey'], request_body['groupId'], request_body['instance']['instanceId'], request_body['startTime'], request_body['endTime'])
-
-    #do inference
-    response = client.post('/lr/models/0000/inference', data=request_json)
-    time.sleep(10)
     '''
+    #do inference
+    response = client.post('/models/0000/inference', data=request_json)
+    time.sleep(1000)
     
     request_sample = {'groupId': '07514da3-1b93-4cfe-b9dd-177c3e4eb10c', 'apiEndpoint': 'https://AIDice-T2-api.azurewebsites.net/', 'apiKey': '2812e4ea-ce22-4283-b24d-73333893b240', 'seriesSets': [{'seriesSetName': 'Gandalf_test_multi_v3_TotalIOsGt30s', 'seriesSetId': 'bb1cfbf3-236c-4ecc-aad0-2c78f38c3701', 'metricId': '96542384-5aac-4d1b-9189-f985cbfb8e84', 'dimensionFilter': {}, 'enrichmentConfigs': [{'enrichmentName': 'AnomalyDetection', 'enrichmentConfigId': '29ac460e-6b03-49e1-a593-4d04766a987a'}], 'metricMeta': {'granularityName': 'Custom', 'granularityAmount': 300, 'datafeedId': '3e9f2e86-a5ef-44d3-bcf1-55c973e2db65', 'metricName': 'TotalIOsGt30s', 'datafeedName': 'Gandalf_test_multi_v3', 'dataStartFrom': '2020-08-23T00:00:00+00:00'}}], 'instance': {'instanceName': 'AiDice Traceback Window Fix_Instance_1603826870737', 'instanceId': '8734db1c-a59d-43e4-90cb-d2f87a9d66c1', 'status': 'Active', 'appId': 'da2af68f-e0f3-4674-a716-e91fe46f9376', 'appName': 'AiDice_Traceback_Window_Fix', 'appDisplayName': 'AiDice Traceback Window Fix', 'appType': 'External', 'remoteModelKey': '', 'remoteCandidateModelKey': '', 'params': {'removeColumns': '[]', 'totalSteps': 5000, 'scheduledRun': False, 'tracebackWindow': 0, 'ifEarlyAbort': True, 'tabuSize': 50, 'randomProbability': 0.5, 'bmsSize': 50, 'maxPatternLength': 4, 'metricDeficiency': 0, 'maxSearchResult': 20, 'runInterval': 3600, 'maxSearchTime': 180, 'maxOutputRows': 3, 'maxOutputChars': 60000, 'maxRetrievalRows': 1000}, 'target': {'fillMissingPointForAd': 'PreviousValue', 'migrationType': 0, 'maxConcurrency': -1, 'minRetryIntervalInSeconds': -1, 'granularityName': 'Minutely', 'credentialUUID': None, 'dataStartFrom': 1603826940000, 'createdTime': 1603826882000, 'ingestionType': 'Single', 'needRollup': 'RollupByUser', 'allUpIdentification': None, 'detectionStartTime': None, 'datafeedDescription': '', 'rollUpColumns': '', 'creator': 'giantoni@microsoft.com', 'actionLinkTemplate': '', 'extendedDimensions': None, 'stopRetryAfterInSeconds': -1, 'maxQueryPerMinute': 30.0, 'startOffsetInSeconds': 0, 'isAdmin': True, 'viewMode': 'Private', 'target': 'TSDB', 'granularityAmount': None, 'rollUpMethod': 'None', 'viewers': ['bix@microsoft.com'], 'datafeedId': '472b445e-fe64-4a42-8b08-82148d802368', 'parameterList': [], 'fillMissingPointForAdValue': 0.0, 'metrics': [{'metricId': '1f2b7333-dbb8-43e2-a6ab-f752a49ed31f', 'metricName': 'EvaluationScore', 'metricDisplayName': 'EvaluationScore', 'metricDescription': '', 'metricType': 'NORMAL', 'derivedScript': ''}], 'authenticationType': 'Basic', 'datafeedName': 'Data Feed for AiDice Traceback Window Fix_Instance_1603826870737', 'dataSourceType': 'API', 'admins': ['chuwan@microsoft.com', 'bennyng@microsoft.com', 'giantoni@microsoft.com', 'nguyenm@microsoft.com', 'conhua@microsoft.com', 'abasok@microsoft.com', 'mingzhao@microsoft.com', '07514da3-1b93-4cfe-b9dd-177c3e4eb10c@metricsadvisor.ai'], 'dimensions': [{'dimensionName': 'hashKey', 'dimensionDisplayName': 'hashKey'}], 'timestampColumn': 'timestamp', 'status': 'Active'}, 'hookIds': ['f07e6f43-248b-4377-a26e-6adcfd01f97a']}, 'startTime': '2020-11-01T01:59:59Z', 'endTime': '2020-11-01T02:00:00Z', 'manually': True, 'groupName': 'e2e_stream_15_gran'}
     #get inference Json result
