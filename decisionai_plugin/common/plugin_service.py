@@ -102,13 +102,13 @@ class PluginService():
             
             if result == STATUS_SUCCESS:
                 if callback is not None:
-                    callback(subscription, model_id, model_dir, parameters, ModelState.Ready, message)
+                    callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, message)
             else:
                 raise Exception(message)
         except Exception as e:
             error_message = str(e) + '\n' + traceback.format_exc()
             if callback is not None:
-                callback(subscription, model_id, None, parameters, ModelState.Failed, error_message)
+                callback(subscription, model_id, task_id, None, parameters, ModelState.Failed, error_message)
 
             result = STATUS_FAIL
         finally:
@@ -149,11 +149,11 @@ class PluginService():
             result, values, message = self.do_inference(model_dir, parameters, series, Context(subscription, model_id, task_id))
 
             if callback is not None:
-                callback(subscription, model_id, parameters, result, values, message)
+                callback(subscription, model_id, task_id, parameters, result, values, message)
         except Exception as e:
             error_message = str(e) + '\n' + traceback.format_exc()
             if callback is not None:
-                callback(subscription, model_id, parameters, STATUS_FAIL, None, error_message)
+                callback(subscription, model_id, task_id, parameters, STATUS_FAIL, None, error_message)
         finally:
             shutil.rmtree(model_dir, ignore_errors=True)
 
