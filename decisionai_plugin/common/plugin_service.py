@@ -299,8 +299,12 @@ class PluginService():
         request_body = json.loads(request.data)
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        result, message = self.do_verify(request_body, Context(subscription, '', ''))
-        if result != STATUS_SUCCESS:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
-        else:
-            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Verify successfully! ' + message, modelState=ModelState.Deleted.name)), 200)
+        try:
+            result, message = self.do_verify(request_body, Context(subscription, '', ''))
+            if result != STATUS_SUCCESS:
+                return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
+            else:
+                return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Verify successfully! ' + message, modelState=ModelState.Deleted.name)), 200)
+        except Exception as e:
+            error_message = str(e) + '\n' + traceback.format_exc()
+            return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + error_message, modelState=ModelState.Deleted.name)), 400)
