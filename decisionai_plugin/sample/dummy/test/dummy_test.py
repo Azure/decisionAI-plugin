@@ -30,7 +30,6 @@ if __name__ == '__main__':
     {
         "groupId": "66f75e07-7c9b-4a52-947a-1a3880b418cb",
         "apiEndpoint": "https://AIDice-T2-api.azurewebsites.net/",
-        "apiKey": "2812e4ea-ce22-4283-b24d-73333893b240",
         "name":"my-test","seriesSets":[{"seriesSetName":"localCSV_test2_Totalvalue","seriesSetId":"7e7954a5-7716-414b-ba13-2cc0ca644f03","metricId":"9e5bf248-f016-43ea-835e-fa20bcf67a95","dimensionFilter":{},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"d10a392f-c2c0-4204-94ee-ece960072bf1"}],"metricMeta":{"granularityName":"Daily","granularityAmount":0,"datafeedId":"b6245c1f-b4e4-4294-a707-8f30697978a2","metricName":"Totalvalue","datafeedName":"localCSV_test2","dataStartFrom":"2019-03-17T00:00:00+00:00"}}
         ],
         "instance": {
@@ -65,7 +64,6 @@ if __name__ == '__main__':
                     {
                         "groupId": "66f75e07-7c9b-4a52-947a-1a3880b418cb",
                         "apiEndpoint": "https://AIDice-T2-api.azurewebsites.net/",
-                        "apiKey": "2812e4ea-ce22-4283-b24d-73333893b240",
                         "name":"my-test",
                         "seriesSets":[{
                             "seriesSetName":"Gandalf_test_multi_v3_TotalIOsGt30s",
@@ -117,7 +115,6 @@ if __name__ == '__main__':
     request_json_2 = '''
                     {
                         "apiEndpoint": "https://aidice-t2-api.azurewebsites.net/",
-                        "apiKey": "e83abde1-e085-4c2d-9f03-ef61abc98e6e",
                         "endTime": "2020-11-19T00:00:00Z",
                         "groupId": "02c3d5a2-5aa3-441d-a5d8-aeea37add582",
                         "groupName": "aidice-mismatch-test",
@@ -361,7 +358,6 @@ if __name__ == '__main__':
     request_json_3 = '''
         {
             "apiEndpoint": "https://kensho2-ppe-api.azurewebsites.net/",
-            "apiKey": "3477e6f3-4570-4508-99f7-5fce091981af",
             "endTime": "2020-12-23T12:25:00Z",
             "groupId": "12e8b88c-bb42-44b9-bec7-aed0f1f18ac4",
             "groupName": "yongw/test",
