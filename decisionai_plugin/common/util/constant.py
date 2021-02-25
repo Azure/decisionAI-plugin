@@ -27,3 +27,9 @@ LOWER = 'lower'
 DAY_IN_SECONDS = 86400
 HOUR_IN_SECONDS = 3600
 MINT_IN_SECONDS = 60
+
+USER_ADDR = '@metricsadvisor.ai'
+
+META_API = '/powerai-metadata3p-api'
+TSG_API = '/powerai-time-series-group-api-3p'
+STORAGE_GW_API = '/storage-gw-server'
