@@ -180,7 +180,7 @@ class PluginService():
         log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
 
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
-        if result == STATUS_SUCCESS:
+        if result == STATUS_SUCCESS and values != None:
             for value in values:
                 result, last_error = self.tsanaclient.save_data_points(parameters, value['metricId'], value['dimension'], value['timestamps'], value['values'], 
                                                                         value['fields'] if 'fields' in value else None, value['fieldValues'] if 'fieldValues' in value else None)
