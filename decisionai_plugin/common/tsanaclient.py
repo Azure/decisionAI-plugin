@@ -1,6 +1,7 @@
 import json
 import math
 import datetime
+import os
 
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL, USER_ADDR, META_API, TSG_API, STORAGE_GW_API
 from .util.retryrequests import RetryRequests
@@ -12,7 +13,6 @@ from telemetry import log
 import pandas as pd
 
 REQUEST_TIMEOUT_SECONDS = 300
-
 
 def get_field_idx(fields, target):
     for idx, field in enumerate(fields):
@@ -28,6 +28,8 @@ class TSANAClient(object):
         self.username = username
         self.password = password
         self.retryrequests = RetryRequests(retrycount, retryinterval)
+        self.crt = os.environ['MA_CERT_CRT_PATH'] if 'MA_CERT_CRT_PATH' in os.environ else ''
+        self.key = os.environ['MA_CERT_KEY_PATH'] if 'MA_CERT_KEY_PATH' in os.environ else ''
 
     def post(self, api_endpoint, api_key, user, path, data):
         url = api_endpoint.rstrip('/') + path
@@ -42,9 +44,14 @@ class TSANAClient(object):
         else:
             auth = None
 
+        if self.crt and self.key:
+            cert = (self.crt, self.key)
+        else:
+            cert = None
+
         try:
             r = self.retryrequests.post(url=url, headers=headers, auth=auth, data=json.dumps(data),
-                                        timeout=REQUEST_TIMEOUT_SECONDS, verify=False)
+                                        timeout=REQUEST_TIMEOUT_SECONDS, cert=cert, verify=False)
             if r.status_code != 204:
                 return r.json()
         except Exception as e:
@@ -63,9 +70,14 @@ class TSANAClient(object):
         else:
             auth = None
 
+        if self.crt and self.key:
+            cert = (self.crt, self.key)
+        else:
+            cert = None
+
         try:
             r = self.retryrequests.put(url=url, headers=headers, auth=auth, data=json.dumps(data),
-                                        timeout=REQUEST_TIMEOUT_SECONDS, verify=False)
+                                        timeout=REQUEST_TIMEOUT_SECONDS, cert=cert, verify=False)
             if r.status_code != 204:
                 return r.json()
         except Exception as e:
@@ -84,9 +96,14 @@ class TSANAClient(object):
         else:
             auth = None
 
+        if self.crt and self.key:
+            cert = (self.crt, self.key)
+        else:
+            cert = None
+
         try:
             r = self.retryrequests.get(url=url, headers=headers, auth=auth, timeout=REQUEST_TIMEOUT_SECONDS,
-                                       verify=False)
+                                       cert=cert, verify=False)
             return r.json()
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, {}'.format(path, str(e)))
