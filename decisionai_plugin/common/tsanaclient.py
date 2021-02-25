@@ -2,7 +2,7 @@ import json
 import math
 import datetime
 
-from .util.constant import STATUS_SUCCESS, STATUS_FAIL
+from .util.constant import STATUS_SUCCESS, STATUS_FAIL, USER_ADDR, META_API, TSG_API, STORAGE_GW_API
 from .util.retryrequests import RetryRequests
 from .util.series import Series
 from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
@@ -29,10 +29,11 @@ class TSANAClient(object):
         self.password = password
         self.retryrequests = RetryRequests(retrycount, retryinterval)
 
-    def post(self, api_endpoint, api_key, path, data):
+    def post(self, api_endpoint, api_key, user, path, data):
         url = api_endpoint.rstrip('/') + path
         headers = {
             "x-api-key": api_key,
+            "x-user": user,
             "Content-Type": "application/json"
         }
 
@@ -49,10 +50,11 @@ class TSANAClient(object):
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
 
-    def put(self, api_endpoint, api_key, path, data):
+    def put(self, api_endpoint, api_key, user, path, data):
         url = api_endpoint.rstrip('/') + path
         headers = {
             "x-api-key": api_key,
+            "x-user": user,
             "Content-Type": "application/json"
         }
 
@@ -69,10 +71,11 @@ class TSANAClient(object):
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
 
-    def get(self, api_endpoint, api_key, path):
+    def get(self, api_endpoint, api_key, user, path):
         url = api_endpoint.rstrip('/') + path
         headers = {
             "x-api-key": api_key,
+            "x-user": user,
             "Content-Type": "application/json"
         }
 
@@ -89,22 +92,23 @@ class TSANAClient(object):
             raise Exception('TSANA service api "{}" failed, {}'.format(path, str(e)))
 
     def get_group_detail(self, api_endpoint, api_key, group_id):
-        return self.get(api_endpoint, api_key, '/timeSeriesGroups/' + group_id)
+        return self.get(api_endpoint + TSG_API, api_key, group_id + USER_ADDR, '/timeSeriesGroups/' + group_id)
 
     # To get the meta of a specific metric from TSANA
     # Parameters:
-    #   apiEndpoint: api endpoint for specific user
-    #   apiKey: api key for specific user
+    #   api_endpoint: api endpoint for specific user
+    #   api_key: api key for specific user
+    #   group_id: group id
     #   metric_id: a UUID string
     # Return:
     #   meta: the meta of the specified metric, or None if there is something wrong. 
-    def get_metric_meta(self, api_endpoint, api_key, metric_id):
-        r = self.get(api_endpoint, api_key, '/metrics/' + metric_id + '/meta')
+    def get_metric_meta(self, api_endpoint, api_key, group_id, metric_id):
+        r = self.get(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/' + metric_id + '/meta')
         log.info("******get_metric_meta******:\nresponse: {}\n******************".format(r))
         return r
 
-    def get_dimesion_values(self, api_endpoint, api_key, metric_id, dimension_name):
-        dims = self.get(api_endpoint, api_key, '/metrics/' + metric_id + '/dimensions')
+    def get_dimesion_values(self, api_endpoint, api_key, group_id, metric_id, dimension_name):
+        dims = self.get(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/' + metric_id + '/dimensions')
         if 'dimensions' in dims and dimension_name in dims['dimensions']:
             return dims['dimensions'][dimension_name]
         else:
@@ -112,14 +116,15 @@ class TSANAClient(object):
 
     # Query time series from TSANA
     # Parameters:
-    #   apiEndpoint: api endpoint for specific user
-    #   apiKey: api key for specific user
+    #   api_endpoint: api endpoint for specific user
+    #   api_key: api key for specific user
+    #   group_id: group id
     #   series_sets: Array of series set
     #   start_time: inclusive, the first timestamp to be query
     #   end_time: exclusive
     # Return: 
     #   A array of Series object
-    def get_timeseries(self, api_endpoint, api_key, series_sets, start_time, end_time, top=20):
+    def get_timeseries(self, api_endpoint, api_key, group_id, series_sets, start_time, end_time, top=20):
 
         if start_time > end_time:
             raise Exception('start_time should be less than or equal to end_time')
@@ -148,7 +153,7 @@ class TSANAClient(object):
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(api_endpoint, api_key, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -160,17 +165,17 @@ class TSANAClient(object):
                     series.append(s)
                 
                 if len(series) > 0:                    
-                    ret = self.post(api_endpoint, api_key, '/metrics/series/data', data=dict(value=series))
+                    ret = self.post(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/series/data', data=dict(value=series))
                     sub_multi_series_data = []
                     for factor in ret['value']:
                         if len(factor['values']) <= 0:
                             continue
 
                         sub_multi_series_data.append(Series(factor['id']['metricId'], factor['id']['seriesId'], factor['id']['dimension'], factor['fields'], factor['values']))
+                        total_point_num += len(factor['values'])
                     
                     multi_series_data.extend(sub_multi_series_data)
                     count += len(sub_multi_series_data)
-                    total_point_num += count * data_point_num_per_series
 
                     if count >= top:
                         break
@@ -198,6 +203,7 @@ class TSANAClient(object):
     # Parameters:
     #   api_endpoint: api endpoint for specific user
     #   api_key: api key for specific user
+    #   group_id: group id
     #   metric_id: uuid for metric
     #   dimensions: included dimensions
     #   start_time: inclusive, the first timestamp to be query
@@ -205,10 +211,10 @@ class TSANAClient(object):
     #   skip: offset
     # Return:
     #   ranked series dimensions
-    def rank_series(self, api_endpoint, api_key, metric_id, dimensions, start_time, top=10, skip=0):
+    def rank_series(self, api_endpoint, api_key, metric_id, group_id, dimensions, start_time, top=10, skip=0):
         url = f'/metrics/{metric_id}/rank-series'
         para = dict(dimensions=dimensions, count=top, startTime=start_time, skip=skip)
-        return self.post(api_endpoint, api_key, url, data=para)
+        return self.post(api_endpoint + META_API, api_key, group_id + USER_ADDR, url, data=para)
 
     # Save a training result back to TSANA
     # Parameters: 
@@ -231,7 +237,7 @@ class TSANAClient(object):
                 'message': message
             }
 
-            self.put(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
+            self.put(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -268,7 +274,7 @@ class TSANAClient(object):
                         'result': item['value'],
                         'status': item['status']
                     })
-                self.post(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
+                self.post(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -294,7 +300,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
+            self.post(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -312,7 +318,7 @@ class TSANAClient(object):
     #   value: inference result array
     def get_inference_result(self, parameters):
         try: 
-            ret = self.get(parameters['apiEndpoint'], parameters['apiKey'], '/timeSeriesGroups/' 
+            ret = self.get(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
                                 + parameters['groupId'] 
                                 + '/appInstances/' 
                                 + parameters['instance']['instanceId'] 
@@ -358,7 +364,7 @@ class TSANAClient(object):
                 body['fields'] = fields
                 body['fieldValues'] = field_values
 
-            self.post(parameters['apiEndpoint'], parameters['apiKey'], '/pushData', body)
+            self.post(parameters['apiEndpoint'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -367,16 +373,17 @@ class TSANAClient(object):
     # Parameters:
     #   api_endpoint: api endpoint for specific user
     #   api_key: api key for specific user
+    #   group_id: group id
     #   alert_type: alert type
     #   message: alert message
     # Return:
     #   result: STATE_SUCCESS / STATE_FAIL 
     #   message: description for the result
-    def push_alert(self, api_endpoint, api_key, alert_type, message):
+    def push_alert(self, api_endpoint, api_key, group_id, alert_type, message):
         try:
             url = '/timeSeriesGroups/alert'
             para = dict(alertType=alert_type, message=message)
-            self.post(api_endpoint, api_key, url, data=para)
+            self.post(api_endpoint + TSG_API, api_key, group_id + USER_ADDR, url, data=para)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, repr(e)
