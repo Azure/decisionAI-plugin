@@ -34,6 +34,9 @@ class TSANAClient(object):
 
     def post(self, api_endpoint, api_key, user, path, data):
         url = api_endpoint.rstrip('/') + path
+        if not url.startswith('http'):
+            url = "https://" + url
+
         headers = {
             "x-api-key": api_key,
             "x-user": user,
@@ -61,6 +64,9 @@ class TSANAClient(object):
 
     def put(self, api_endpoint, api_key, user, path, data):
         url = api_endpoint.rstrip('/') + path
+        if not url.startswith('http'):
+            url = "https://" + url
+
         headers = {
             "x-api-key": api_key,
             "x-user": user,
@@ -88,6 +94,9 @@ class TSANAClient(object):
 
     def get(self, api_endpoint, api_key, user, path):
         url = api_endpoint.rstrip('/') + path
+        if not url.startswith('http'):
+            url = "https://" + url
+            
         headers = {
             "x-api-key": api_key,
             "x-user": user,
