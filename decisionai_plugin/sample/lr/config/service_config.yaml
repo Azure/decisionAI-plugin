@@ -1,6 +1,5 @@
 tsana_app_name: lr
-series_limit: 5000000
-series_limit_per_series_set: 500
+auto_data_retrieving: true
 models_in_training_limit_per_instance: 1
 az_tsana_meta_table: modelmeta
 az_tsana_moniter_table: moniter

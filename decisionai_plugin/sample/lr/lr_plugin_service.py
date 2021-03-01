@@ -61,7 +61,7 @@ class LrPluginService(PluginService):
     def do_verify(self, parameters, context):
         # Check series set permission
         for data in parameters['seriesSets']:
-            meta = self.tsanaclient.get_metric_meta(parameters['apiEndpoint'], parameters['apiKey'], data['metricId'])
+            meta = self.tsanaclient.get_metric_meta(parameters, data['metricId'])
 
             if meta is None:
                 return STATUS_FAIL, 'You have no permission to read Metric {}'.format(data['metricId'])

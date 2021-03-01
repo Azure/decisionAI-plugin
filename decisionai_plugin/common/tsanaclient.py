@@ -3,7 +3,9 @@ import math
 import datetime
 import os
 
-from .util.constant import STATUS_SUCCESS, STATUS_FAIL, USER_ADDR, META_API, TSG_API, STORAGE_GW_API
+from .util.constant import STATUS_SUCCESS, STATUS_FAIL
+from .util.constant import USER_ADDR
+from .util.constant import META_API, TSG_API, STORAGE_GW_API
 from .util.retryrequests import RetryRequests
 from .util.series import Series
 from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
@@ -23,8 +25,7 @@ def get_field_idx(fields, target):
 
 
 class TSANAClient(object):
-    def __init__(self, series_limit, username=None, password=None, retrycount=3, retryinterval=1000):
-        self.series_limit = series_limit
+    def __init__(self, username=None, password=None, retrycount=3, retryinterval=1000):
         self.username = username
         self.password = password
         self.retryrequests = RetryRequests(retrycount, retryinterval)
@@ -36,6 +37,7 @@ class TSANAClient(object):
         headers = {
             "x-api-key": api_key,
             "x-user": user,
+            "X-Base-Address": api_endpoint,
             "Content-Type": "application/json"
         }
 
@@ -55,13 +57,14 @@ class TSANAClient(object):
             if r.status_code != 204:
                 return r.json()
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
+            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, data, str(e)))
 
     def put(self, api_endpoint, api_key, user, path, data):
         url = api_endpoint.rstrip('/') + path
         headers = {
             "x-api-key": api_key,
             "x-user": user,
+            "X-Base-Address": api_endpoint,
             "Content-Type": "application/json"
         }
 
@@ -81,13 +84,14 @@ class TSANAClient(object):
             if r.status_code != 204:
                 return r.json()
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(path, data, str(e)))
+            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, data, str(e)))
 
     def get(self, api_endpoint, api_key, user, path):
         url = api_endpoint.rstrip('/') + path
         headers = {
             "x-api-key": api_key,
             "x-user": user,
+            "X-Base-Address": api_endpoint,
             "Content-Type": "application/json"
         }
 
@@ -106,26 +110,34 @@ class TSANAClient(object):
                                        cert=cert, verify=False)
             return r.json()
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, {}'.format(path, str(e)))
+            raise Exception('TSANA service api "{}" failed, {}'.format(url, str(e)))
 
-    def get_group_detail(self, api_endpoint, api_key, group_id):
-        return self.get(api_endpoint + TSG_API, api_key, group_id + USER_ADDR, '/timeSeriesGroups/' + group_id)
+    ################ META API ################
 
     # To get the meta of a specific metric from TSANA
     # Parameters:
-    #   api_endpoint: api endpoint for specific user
-    #   api_key: api key for specific user
-    #   group_id: group id
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
     #   metric_id: a UUID string
     # Return:
-    #   meta: the meta of the specified metric, or None if there is something wrong. 
-    def get_metric_meta(self, api_endpoint, api_key, group_id, metric_id):
-        r = self.get(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/' + metric_id + '/meta')
-        log.info("******get_metric_meta******:\nresponse: {}\n******************".format(r))
-        return r
+    #   the meta of the specified metric, or None if there is something wrong. 
+    def get_metric_meta(self, parameters, metric_id):
+        return self.get(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + metric_id + '/meta')
 
-    def get_dimesion_values(self, api_endpoint, api_key, group_id, metric_id, dimension_name):
-        dims = self.get(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/' + metric_id + '/dimensions')
+    # To get the dimension values of a specific dimension of a metric from TSANA
+    # Parameters:
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #   metric_id: a UUID string
+    #   dimension_name: dimension name for specific metric with metric_id
+    # Return:
+    #   the dimension values of a specific dimension of a metric, or None if there is something wrong. 
+    def get_dimesion_values(self, parameters, metric_id, dimension_name):
+        dims = self.get(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + metric_id + '/dimensions')
         if 'dimensions' in dims and dimension_name in dims['dimensions']:
             return dims['dimensions'][dimension_name]
         else:
@@ -133,15 +145,17 @@ class TSANAClient(object):
 
     # Query time series from TSANA
     # Parameters:
-    #   api_endpoint: api endpoint for specific user
-    #   api_key: api key for specific user
-    #   group_id: group id
-    #   series_sets: Array of series set
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #       series_sets: Array of series set
     #   start_time: inclusive, the first timestamp to be query
     #   end_time: exclusive
+    #   top: top sereis number per series set
     # Return: 
     #   A array of Series object
-    def get_timeseries(self, api_endpoint, api_key, group_id, series_sets, start_time, end_time, top=20):
+    def get_timeseries(self, parameters, start_time, end_time, top=20):
 
         if start_time > end_time:
             raise Exception('start_time should be less than or equal to end_time')
@@ -153,7 +167,7 @@ class TSANAClient(object):
         total_point_num = 0
 
         # Query each series's tag
-        for data in series_sets:
+        for data in parameters['seriesSets']:
             dim = {}
             if 'dimensionFilter' not in data:
                 data['dimensionFilter'] = data['filters']
@@ -170,7 +184,7 @@ class TSANAClient(object):
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -182,7 +196,7 @@ class TSANAClient(object):
                     series.append(s)
                 
                 if len(series) > 0:                    
-                    ret = self.post(api_endpoint + META_API, api_key, group_id + USER_ADDR, '/metrics/series/data', data=dict(value=series))
+                    ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/series/data', data=dict(value=series))
                     sub_multi_series_data = []
                     for factor in ret['value']:
                         if len(factor['values']) <= 0:
@@ -218,9 +232,10 @@ class TSANAClient(object):
 
     # Get ranked dimensions
     # Parameters:
-    #   api_endpoint: api endpoint for specific user
-    #   api_key: api key for specific user
-    #   group_id: group id
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
     #   metric_id: uuid for metric
     #   dimensions: included dimensions
     #   start_time: inclusive, the first timestamp to be query
@@ -228,10 +243,61 @@ class TSANAClient(object):
     #   skip: offset
     # Return:
     #   ranked series dimensions
-    def rank_series(self, api_endpoint, api_key, metric_id, group_id, dimensions, start_time, top=10, skip=0):
+    def rank_series(self, parameters, metric_id, dimensions, start_time, top=10, skip=0):
         url = f'/metrics/{metric_id}/rank-series'
         para = dict(dimensions=dimensions, count=top, startTime=start_time, skip=skip)
-        return self.post(api_endpoint + META_API, api_key, group_id + USER_ADDR, url, data=para)
+        return self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
+
+    # Save a inference result back to TSANA
+    # Parameters: 
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #   metric_id: a UUID string
+    #   dimensions: a dict includes dimension name and value
+    #   timestamps: an array of timestamps
+    #   values: an array of inference result values
+    #   fields: an array of field names
+    #   field_values: an 2-d array of field values corresponding with fields
+    #   push_data_type: 'DatabaseOnly'/'AnomalyDetection', default is 'AnomalyDetection'
+    # Return:
+    #   result: STATE_SUCCESS / STATE_FAIL
+    #   message: description for the result
+    def save_data_points(self, parameters, metric_id, dimensions, timestamps, values, fields=None, field_values=None, push_data_type='AnomalyDetection'):
+        try: 
+            if len(values) <= 0: 
+                raise Exception('empty values')
+
+            body = {
+                "metricId": metric_id,
+                "dimensions": dimensions,
+                "timestamps": timestamps, 
+                "values": values,
+                "pushDataType": push_data_type
+            }
+
+            if fields and len(fields) > 0 and field_values and len(field_values) > 0:
+                body['fields'] = fields
+                body['fieldValues'] = field_values
+
+            self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
+            return STATUS_SUCCESS, ''
+        except Exception as e:
+            return STATUS_FAIL, str(e)
+
+    ################ TSG API ################
+
+    # To get the detailed info of a specific group from TSANA
+    # Parameters:
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    # Return:
+    #   detailed info of the specified group 
+    def get_group_detail(self, parameters):
+        return self.get(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'])
 
     # Save a training result back to TSANA
     # Parameters: 
@@ -254,7 +320,7 @@ class TSANAClient(object):
                 'message': message
             }
 
-            self.put(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
+            self.put(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -291,7 +357,7 @@ class TSANAClient(object):
                         'result': item['value'],
                         'status': item['status']
                     })
-                self.post(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
+                self.post(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -317,7 +383,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
+            self.post(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -335,7 +401,7 @@ class TSANAClient(object):
     #   value: inference result array
     def get_inference_result(self, parameters):
         try: 
-            ret = self.get(parameters['apiEndpoint'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
+            ret = self.get(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
                                 + parameters['groupId'] 
                                 + '/appInstances/' 
                                 + parameters['instance']['instanceId'] 
@@ -348,59 +414,22 @@ class TSANAClient(object):
         except Exception as e:
             return STATUS_FAIL, str(e), None
 
-    # Save a inference result back to TSANA
-    # Parameters: 
+    # Push alert in general
+    # Parameters:
     #   parameters: a dict object which should includes
     #       apiEndpoint: api endpoint for specific user
     #       apiKey: api key for specific user
     #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
-    #       instance: instance object, which is copied from the inference request, or from the entity
-    #   metric_id: a UUID string
-    #   dimensions: a dict includes dimension name and value
-    #   timestamps: an array of timestamps
-    #   values: an array of inference result values
-    #   fields: an array of field names
-    #   field_values: an 2-d array of field values corresponding with fields
-    #   push_data_type: 'DatabaseOnly'/'AnomalyDetection', default is 'DatabaseOnly'
-    # Return:
-    #   result: STATE_SUCCESS / STATE_FAIL
-    #   message: description for the result
-    def save_data_points(self, parameters, metric_id, dimensions, timestamps, values, fields=None, field_values=None):
-        try: 
-            if len(values) <= 0: 
-                raise Exception('empty values')
-
-            body = {
-                "metricId": metric_id,
-                "dimensions": dimensions,
-                "timestamps": timestamps, 
-                "values": values
-            }
-
-            if fields and len(fields) > 0 and field_values and len(field_values) > 0:
-                body['fields'] = fields
-                body['fieldValues'] = field_values
-
-            self.post(parameters['apiEndpoint'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
-            return STATUS_SUCCESS, ''
-        except Exception as e:
-            return STATUS_FAIL, str(e)
-
-    # Push alert in general
-    # Parameters:
-    #   api_endpoint: api endpoint for specific user
-    #   api_key: api key for specific user
-    #   group_id: group id
     #   alert_type: alert type
     #   message: alert message
     # Return:
     #   result: STATE_SUCCESS / STATE_FAIL 
     #   message: description for the result
-    def push_alert(self, api_endpoint, api_key, group_id, alert_type, message):
+    def push_alert(self, parameters, alert_type, message):
         try:
             url = '/timeSeriesGroups/alert'
             para = dict(alertType=alert_type, message=message)
-            self.post(api_endpoint + TSG_API, api_key, group_id + USER_ADDR, url, data=para)
+            self.post(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, repr(e)

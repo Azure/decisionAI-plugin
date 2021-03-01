@@ -48,16 +48,15 @@ def load_config(path):
 
 class PluginService():
     def __init__(self, trainable=True):
-        self.trainable = trainable
-
         config_file = environ.get('SERVICE_CONFIG_FILE')
         config = load_config(config_file)
         if config is None:
             log.error("No configuration '%s', or the configuration is not in JSON format. " % (config_file))
             exit()
         self.config = config
-        self.tsanaclient = TSANAClient(config.series_limit)
+        self.tsanaclient = TSANAClient()
 
+        self.trainable = trainable
         if self.trainable:
             init_monitor(config)
             sched.add_job(func=lambda: run_monitor(config), trigger="interval", seconds=10)
@@ -91,9 +90,9 @@ class PluginService():
             model_dir = os.path.join(self.config.model_dir, subscription + '_' + model_id + '_' + str(time.time()))
             os.makedirs(model_dir, exist_ok=True)
 
-            if 'dataRetrieving' in parameters and parameters['dataRetrieving']:
+            if self.config.auto_data_retrieving:
                 start_time, end_time = self.get_data_time_range(parameters, True)
-                series = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], parameters['seriesSets'], start_time, end_time)
+                series = self.tsanaclient.get_timeseries(parameters, start_time, end_time)
                 update_state(self.config, subscription, model_id, ModelState.Training)
                 result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
             else:
@@ -140,8 +139,8 @@ class PluginService():
                 download_model(self.config, subscription, model_id, model_dir)
             
             start_time, end_time = self.get_data_time_range(parameters)
-            if 'dataRetrieving' in parameters and parameters['dataRetrieving']:
-                series = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], parameters['seriesSets'], start_time, end_time)                
+            if self.config.auto_data_retrieving:
+                series = self.tsanaclient.get_timeseries(parameters, start_time, end_time)              
             else:
                 series = None
 
@@ -164,35 +163,41 @@ class PluginService():
         return STATUS_SUCCESS, ''
 
     def train_callback(self, subscription, model_id, task_id, model_dir, parameters, model_state, last_error=None):
-        meta = get_meta(self.config, subscription, model_id)
-        if meta is None or meta['state'] == ModelState.Deleted.name:
-            return STATUS_FAIL, 'Model is not found! '
+        try:
+            meta = get_meta(self.config, subscription, model_id)
+            if meta is None or meta['state'] == ModelState.Deleted.name:
+                return STATUS_FAIL, 'Model is not found! '
 
-        if model_state == ModelState.Ready:
-            result, message = upload_model(self.config, subscription, model_id, model_dir)
-            if result != STATUS_SUCCESS:
-                model_state = ModelState.Failed
-                last_error = 'Model storage failed! ' + message
+            if model_state == ModelState.Ready:
+                result, message = upload_model(self.config, subscription, model_id, model_dir)
+                if result != STATUS_SUCCESS:
+                    model_state = ModelState.Failed
+                    last_error = 'Model storage failed! ' + message
 
-        update_state(self.config, subscription, model_id, model_state, None, last_error)
-        self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
-
-        log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
+            update_state(self.config, subscription, model_id, model_state, None, last_error)
+            self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
+        except Exception as e:    
+            last_error = str(e) + '\n' + traceback.format_exc()
+        finally:
+            log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
 
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
-        if result == STATUS_SUCCESS and values != None:
-            for value in values:
-                result, last_error = self.tsanaclient.save_data_points(parameters, value['metricId'], value['dimension'], value['timestamps'], value['values'], 
-                                                                        value['fields'] if 'fields' in value else None, value['fieldValues'] if 'fieldValues' in value else None)
-                if result != STATUS_SUCCESS:
-                    break
+        try:
+            if result == STATUS_SUCCESS and values != None:
+                for value in values:
+                    result, last_error = self.tsanaclient.save_data_points(parameters, value['metricId'], value['dimension'], value['timestamps'], value['values'], 
+                                                                            value['fields'] if 'fields' in value else None, value['fieldValues'] if 'fieldValues' in value else None)
+                    if result != STATUS_SUCCESS:
+                        break
 
-        if result == STATUS_SUCCESS:
-            self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
-        else:
-            self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
-
-        log.info ("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, last_error if last_error is not None else ''))
+            if result == STATUS_SUCCESS:
+                self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
+            else:
+                self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
+        except Exception as e:    
+            last_error = str(e) + '\n' + traceback.format_exc()
+        finally:
+            log.info ("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, last_error if last_error is not None else ''))
 
     def train(self, request):
         request_body = json.loads(request.data)
