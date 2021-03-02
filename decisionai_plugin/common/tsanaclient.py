@@ -59,7 +59,10 @@ class TSANAClient(object):
             r = self.retryrequests.post(url=url, headers=headers, auth=auth, data=json.dumps(data),
                                         timeout=REQUEST_TIMEOUT_SECONDS, cert=cert, verify=False)
             if r.status_code != 204:
-                return r.json()
+                try:
+                    return r.json()
+                except ValueError:
+                    return r.content
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
 
@@ -90,7 +93,10 @@ class TSANAClient(object):
             r = self.retryrequests.put(url=url, headers=headers, auth=auth, data=json.dumps(data),
                                         timeout=REQUEST_TIMEOUT_SECONDS, cert=cert, verify=False)
             if r.status_code != 204:
-                return r.json()
+                try:
+                    return r.json()
+                except ValueError:
+                    return r.content
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
 
@@ -120,7 +126,10 @@ class TSANAClient(object):
         try:
             r = self.retryrequests.get(url=url, headers=headers, auth=auth, timeout=REQUEST_TIMEOUT_SECONDS,
                                        cert=cert, verify=False)
-            return r.json()
+            try:
+                return r.json()
+            except ValueError:
+                return r.content
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, {}'.format(url, str(e)))
 
