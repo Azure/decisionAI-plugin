@@ -33,9 +33,10 @@ class TSANAClient(object):
         self.key = os.environ['MA_CERT_KEY_PATH'] if 'MA_CERT_KEY_PATH' in os.environ else ''
 
     def post(self, api_endpoint, api_key, user, path, data):
+        if not api_endpoint.startswith('http'):
+            api_endpoint = "https://" + api_endpoint
+
         url = api_endpoint.rstrip('/') + path
-        if not url.startswith('http'):
-            url = "https://" + url
 
         headers = {
             "x-api-key": api_key,
@@ -63,9 +64,10 @@ class TSANAClient(object):
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, data, str(e)))
 
     def put(self, api_endpoint, api_key, user, path, data):
+        if not api_endpoint.startswith('http'):
+            api_endpoint = "https://" + api_endpoint
+
         url = api_endpoint.rstrip('/') + path
-        if not url.startswith('http'):
-            url = "https://" + url
 
         headers = {
             "x-api-key": api_key,
@@ -93,10 +95,11 @@ class TSANAClient(object):
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, data, str(e)))
 
     def get(self, api_endpoint, api_key, user, path):
+        if not api_endpoint.startswith('http'):
+            api_endpoint = "https://" + api_endpoint
+
         url = api_endpoint.rstrip('/') + path
-        if not url.startswith('http'):
-            url = "https://" + url
-            
+        
         headers = {
             "x-api-key": api_key,
             "x-user": user,
