@@ -61,7 +61,7 @@ class TSANAClient(object):
             if r.status_code != 204:
                 return r.json()
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, data, str(e)))
+            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
 
     def put(self, api_endpoint, api_key, user, path, data):
         if not api_endpoint.startswith('http'):
@@ -92,7 +92,7 @@ class TSANAClient(object):
             if r.status_code != 204:
                 return r.json()
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, data, str(e)))
+            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
 
     def get(self, api_endpoint, api_key, user, path):
         if not api_endpoint.startswith('http'):
