@@ -99,7 +99,7 @@ class TSANAClient(object):
             api_endpoint = "https://" + api_endpoint
 
         url = api_endpoint.rstrip('/') + path
-        
+
         headers = {
             "x-api-key": api_key,
             "x-user": user,
@@ -161,13 +161,13 @@ class TSANAClient(object):
     #       apiEndpoint: api endpoint for specific user
     #       apiKey: api key for specific user
     #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
-    #       series_sets: Array of series set
+    #   series_sets: Array of series set
     #   start_time: inclusive, the first timestamp to be query
     #   end_time: exclusive
     #   top: top sereis number per series set
     # Return: 
     #   A array of Series object
-    def get_timeseries(self, parameters, start_time, end_time, top=20):
+    def get_timeseries(self, parameters, series_sets, start_time, end_time, top=20):
 
         if start_time > end_time:
             raise Exception('start_time should be less than or equal to end_time')
@@ -179,7 +179,7 @@ class TSANAClient(object):
         total_point_num = 0
 
         # Query each series's tag
-        for data in parameters['seriesSets']:
+        for data in series_sets:
             dim = {}
             if 'dimensionFilter' not in data:
                 data['dimensionFilter'] = data['filters']
