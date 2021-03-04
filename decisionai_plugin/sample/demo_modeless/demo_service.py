@@ -1,6 +1,6 @@
-from common.plugin_service import PluginService
-from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
-from common.util.timeutil import get_time_offset, str_to_dt, dt_to_str
+from decisionai_plugin.common.plugin_service import PluginService
+from decisionai_plugin.common.util.constant import STATUS_SUCCESS, STATUS_FAIL
+from decisionai_plugin.common.util.timeutil import get_time_offset, str_to_dt, dt_to_str
 from telemetry import log
 import copy
 

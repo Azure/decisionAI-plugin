@@ -1,14 +1,18 @@
 import numpy as np
+import pandas as pd
+
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 
-from common.plugin_service import PluginService
-from common.util.constant import InferenceState
-from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
-from common.util.timeutil import dt_to_str, str_to_dt, get_time_offset, get_time_list
-from common.util.data import generate_filled_missing_by_field
-from common.util.gran import Gran
-from common.util.fill_type import Fill
+from decisionai_plugin.common.plugin_service import PluginService
+from decisionai_plugin.common.util.constant import InferenceState
+from decisionai_plugin.common.util.constant import STATUS_SUCCESS, STATUS_FAIL
+from decisionai_plugin.common.util.timeutil import dt_to_str, str_to_dt, get_time_offset, get_time_list
+from decisionai_plugin.common.util.data import generate_filled_missing_by_field
+from decisionai_plugin.common.util.gran import Gran
+from decisionai_plugin.common.util.fill_type import Fill
+
+import datetime
 
 class LrPluginService(PluginService):
 
@@ -54,53 +58,49 @@ class LrPluginService(PluginService):
 
         return start_time, end_time, max_start_time[1]
 
-    def prepare_inference_data(self, parameters):
-        start_time, end_time = self.get_data_time_range(parameters)
-
-        factor_def = parameters['seriesSets']
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], factor_def,
-                                                       start_time, end_time, offset=0,
-                                                       top=self.config.series_limit_per_series_set)
-
-        #fill_missing = generate_filled_missing_by_field(factors_data, start_time, end_time, 'Custom', 300, Fill.Previous, 0)
-
-        return factors_data
-
     def do_verify(self, parameters, context):
         # Check series set permission
         for data in parameters['seriesSets']:
-            meta = self.tsanaclient.get_metric_meta(parameters['apiEndpoint'], parameters['apiKey'], data['metricId'])
+            meta = self.tsanaclient.get_metric_meta(parameters, data['metricId'])
 
             if meta is None:
                 return STATUS_FAIL, 'You have no permission to read Metric {}'.format(data['metricId'])
 
         return STATUS_SUCCESS, ''
         
-    def do_inference(self, model_dir, parameters, context):
+    def do_inference(self, model_dir, parameters, series, context):
         results = []
-        factors_data = self.prepare_inference_data(parameters)
-        start_time, end_time, gran = self.get_inference_time_range(parameters)
 
+        start_time, end_time, gran = self.get_inference_time_range(parameters)
         traceback_window = parameters['instance']['params']['tracebackWindow']
-        for timestamp in get_time_list(start_time, end_time, gran):
-            single_point = []
-            for factor in factors_data:
-                x = np.array([str_to_dt(tuple['timestamp']).timestamp() for tuple in factor.value if str_to_dt(tuple['timestamp']) < timestamp])[-traceback_window:].reshape(-1, 1)
-                y = np.array([tuple['value'] for tuple in factor.value if str_to_dt(tuple['timestamp']) < timestamp])[-traceback_window:]
+
+        for factor in series:
+            timestamps = []
+            values = []
+            mses = []
+            r2scores = []
+
+            df = pd.DataFrame(factor.value, columns=factor.fields)
+            df = df[['time', '__VAL__']]
+            df.columns = ['timestamp', 'value']
+            df['timestamp'] = df['timestamp'].apply(str_to_dt)
+            for timestamp in get_time_list(start_time, end_time, gran):
+                sub_df = df[df['timestamp'] < timestamp]
+                sub_df = sub_df.iloc[-traceback_window:]
                 
+                x = sub_df['timestamp'].apply(lambda x: x.timestamp()).to_numpy().reshape(-1, 1)
+                y = sub_df['value'].to_numpy().reshape(-1, 1)
                 model = linear_model.LinearRegression().fit(x, y)
                 y_new = model.predict(x)
-                
-                single_point.append(dict(seriesId=factor.series_id,value=model.predict(np.array([timestamp.timestamp()]).reshape(-1,1))[0],mse=mean_squared_error(y, y_new),r2score=r2_score(y, y_new)))
-            results.append(dict(timestamp=dt_to_str(timestamp),status=InferenceState.Ready.name,result=single_point))
-        
-        for result in results:
-            for series_result in result['result']:
-                dim = dict(seriesId=series_result['seriesId'])
-                status, message = self.tsanaclient.save_data_points(parameters, parameters['instance']['target']['metrics'][0]['metricId'], dim, [result['timestamp']], [series_result['value']])
 
-        status, message = self.tsanaclient.save_inference_result(parameters, results)
-        if status != STATUS_SUCCESS:
-            raise Exception(message)
+                timestamps.append(dt_to_str(timestamp))
+                values.append(model.predict(np.array([timestamp.timestamp()]).reshape(-1,1))[0][0])
+                mses.append(mean_squared_error(y, y_new))
+                r2scores.append(r2_score(y, y_new))
 
-        return STATUS_SUCCESS, ''
+            dimension = dict(seriesId=factor.series_id)
+            results.append(dict(metricId=parameters['instance']['target']['metrics'][0]['metricId'], dimension=dimension, timestamps=timestamps, values=values))
+            results.append(dict(metricId=parameters['instance']['target']['metrics'][1]['metricId'], dimension=dimension, timestamps=timestamps, values=mses))
+            results.append(dict(metricId=parameters['instance']['target']['metrics'][2]['metricId'], dimension=dimension, timestamps=timestamps, values=r2scores))
+
+        return STATUS_SUCCESS, results, ''

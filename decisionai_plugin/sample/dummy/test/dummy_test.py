@@ -15,8 +15,8 @@ environ['SERVICE_CONFIG_FILE'] = 'sample/dummy/config/service_config.yaml'
 #environ['MON3_SERVICE'] = 'plugin-service'
 
 from sample.dummy.dummy_plugin_service import DummyPluginService
-from common.plugin_model_api import api_init, app
-from common.util.timeutil import str_to_dt
+from decisionai_plugin.common.plugin_model_api import api_init, app
+from decisionai_plugin.common.util.timeutil import str_to_dt
 
 if __name__ == '__main__':
     
@@ -107,7 +107,7 @@ if __name__ == '__main__':
                             },
                             "hookIds": []
                         },
-                        "startTime": "2020-11-11T00:00:00Z",
+                        "startTime": "2020-10-11T00:00:00Z",
                         "endTime": "2020-11-12T21:15:00Z",
                         "manually": true
                     }
@@ -223,6 +223,138 @@ if __name__ == '__main__':
                         "startTime": "2020-11-15T00:00:00Z"
                     }
                     '''
+
+    request_json = '''
+    {
+        "apiEndpoint": "https://AIDice-T2-api.azurewebsites.net/",
+        "apiKey": "2365d22c-a738-41de-8e8e-7be553e826fc",
+        "endTime": "2020-12-11T22:55:00Z",
+        "groupId": "07514da3-1b93-4cfe-b9dd-177c3e4eb10c",
+        "groupName": "e2e_stream_15_gran",
+        "instance": {
+            "appDisplayName": "AiDice_AKS",
+            "appId": "e707b0e4-dad5-45cc-b931-43a29ef16997",
+            "appName": "AiDice_AKS",
+            "appType": "External",
+            "hookIds": ["f07e6f43-248b-4377-a26e-6adcfd01f97a"],
+            "instanceId": "95ef1b2e-676f-4065-9dd8-667ddbca7f1d",
+            "instanceName": "AiDice_AKS_Instance_1607724790777",
+            "params": {
+                "Blackout": "",
+                "bmsSize": 50,
+                "ifEarlyAbort": true,
+                "kustoAuthId": "",
+                "kustoClientId": "",
+                "kustoClientSec": "",
+                "kustoCluster": "",
+                "kustoDb": "",
+                "kustoIngestion": false,
+                "kustoValCol": "",
+                "lookbackDays": 3,
+                "maxOutputChars": 60000,
+                "maxOutputRows": 3,
+                "maxPatternLength": 4,
+                "maxRetrievalRows": 200000,
+                "maxSearchResult": 20,
+                "maxSearchTime": 180,
+                "metricDeficiency": 0,
+                "randomProb": 0.5,
+                "removeColumns": "[]",
+                "runInterval": 900,
+                "scheduledRun": true,
+                "tabuSize": 50,
+                "totalSteps": 5000
+            },
+            "remoteCandidateModelKey": "",
+            "remoteModelKey": "",
+            "status": "Active",
+            "target": {
+                "actionLinkTemplate": "",
+                "admins": ["chuwan@microsoft.com", "bennyng@microsoft.com", "giantoni@microsoft.com", "nguyenm@microsoft.com", "conhua@microsoft.com", "mingzhao@microsoft.com", "07514da3-1b93-4cfe-b9dd-177c3e4eb10c@metricsadvisor.ai", "abasok@microsoft.com"],
+                "authenticationType": "Basic",
+                "createdTime": 1607724804000,
+                "creator": "giantoni@microsoft.com",
+                "dataSourceType": "API",
+                "dataStartFrom": 1607727600000,
+                "datafeedDescription": "",
+                "datafeedId": "42776dc4-70cf-4c76-b40f-381aad27a622",
+                "datafeedName": "Data Feed for AiDice_AKS_Instance_1607724790777",
+                "dimensions": [{
+                        "dimensionDisplayName": "hashKey",
+                        "dimensionName": "hashKey"
+                    }
+                ],
+                "fillMissingPointForAd": "PreviousValue",
+                "fillMissingPointForAdValue": 0.0,
+                "granularityName": "Hourly",
+                "ingestionType": "Single",
+                "isAdmin": true,
+                "maxConcurrency": -1,
+                "maxQueryPerMinute": 30.0,
+                "metrics": [{
+                        "derivedScript": "",
+                        "metricDescription": "",
+                        "metricDisplayName": "EvaluationScore",
+                        "metricId": "e83ff190-69f1-46b9-a025-50d443c180a7",
+                        "metricName": "EvaluationScore",
+                        "metricType": "NORMAL"
+                    }
+                ],
+                "migrationType": 0,
+                "minRetryIntervalInSeconds": -1,
+                "needRollup": "RollupByUser",
+                "parameterList": [],
+                "rollUpColumns": "",
+                "rollUpMethod": "None",
+                "startOffsetInSeconds": 0,
+                "status": "Active",
+                "stopRetryAfterInSeconds": -1,
+                "target": "TSDB",
+                "timestampColumn": "timestamp",
+                "viewMode": "Private",
+                "viewers": ["bix@microsoft.com"]
+            }
+        },
+        "manually": false,
+        "seriesSets": [{
+                "dimensionFilter": { },
+                "enrichmentConfigs": [{
+                        "enrichmentConfigId": "29ac460e-6b03-49e1-a593-4d04766a987a",
+                        "enrichmentName": "AnomalyDetection"
+                    }
+                ],
+                "metricId": "96542384-5aac-4d1b-9189-f985cbfb8e84",
+                "metricMeta": {
+                    "dataStartFrom": "2020-08-23T00:00:00Z",
+                    "datafeedId": "3e9f2e86-a5ef-44d3-bcf1-55c973e2db65",
+                    "datafeedName": "Gandalf_test_multi_v3",
+                    "granularityAmount": 300,
+                    "granularityName": "Custom",
+                    "metricName": "TotalIOsGt30s"
+                },
+                "seriesSetId": "bb1cfbf3-236c-4ecc-aad0-2c78f38c3701",
+                "seriesSetName": "Gandalf_test_multi_v3_TotalIOsGt30s"
+            }
+        ],
+        "startTime": "2020-12-11T22:55:00Z"
+    }
+    '''
+    request_body = json.loads(request_json)
+
+    data_point_request = '''
+    {
+        "dimensions": {
+            "hashKey": "49ef94b4b9ad0df03ffe7c66e5b31a47"
+        },
+        "metricId": "e83ff190-69f1-46b9-a025-50d443c180a7",
+        "timestamps": ["2020-12-08T22:45:00Z"],
+        "values": [1.0]
+    }
+    '''
+
+    #data_body = json.loads(data_point_request)
+    #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['instance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
+    
     request_json_3 = '''
         {
             "apiEndpoint": "https://kensho2-ppe-api.azurewebsites.net/",
@@ -283,6 +415,7 @@ if __name__ == '__main__':
     for i in range(30):
         response = client.post('/models/0000/inference', data=request_json_3)
         time.sleep(1200)
+    
     
     #response = client.post('/dummy/models/train', data=request_json)
     #time.sleep(10)

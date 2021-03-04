@@ -5,9 +5,9 @@ import uuid
 import time
 import datetime
 
-from common.plugin_service import PluginService
-from common.util.constant import STATUS_SUCCESS, STATUS_FAIL
-from common.util.timeutil import dt_to_str, str_to_dt, dt_to_str_file_name
+from decisionai_plugin.common.plugin_service import PluginService
+from decisionai_plugin.common.util.constant import STATUS_SUCCESS, STATUS_FAIL
+from decisionai_plugin.common.util.timeutil import dt_to_str, str_to_dt, dt_to_str_file_name
 
 class DummyPluginService(PluginService):
 
@@ -26,7 +26,7 @@ class DummyPluginService(PluginService):
         time.sleep(2)
         return STATUS_SUCCESS, ''
 
-    def do_inference(self, model_dir, parameters, context):
+    def do_inference(self, model_dir, parameters, series, context):
         start = time.time()
 
         start_time = str_to_dt(parameters['startTime'])
@@ -34,8 +34,7 @@ class DummyPluginService(PluginService):
         end_time = str_to_dt(parameters['endTime'])
         factor_def = parameters['seriesSets']
 
-        factors_data = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], factor_def,
-                                                       start_time, end_time, 0, 40000)
+        factors_data = self.tsanaclient.get_timeseries(parameters['apiEndpoint'], parameters['apiKey'], factor_def, start_time, end_time, 40000)
         print("Data item number: {}".format(len(factors_data)))
         total_time = time.time() - start
 

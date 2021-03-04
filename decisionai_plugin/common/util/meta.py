@@ -24,7 +24,7 @@ def insert_meta(config, subscription, model_id, meta):
             inst_name=meta['instance']['instanceName'], 
             inst_id=meta['instance']['instanceId'], 
             para=json.dumps(meta['instance']['params']),
-            state=ModelState.Training.name,
+            state=ModelState.Pending.name,
             context='',
             last_error='',
             ctime=time.time(),
