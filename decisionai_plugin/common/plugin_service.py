@@ -92,7 +92,7 @@ class PluginService():
 
             if self.config.auto_data_retrieving:
                 start_time, end_time = self.get_data_time_range(parameters, True)
-                series = self.tsanaclient.get_timeseries(parameters, parameters['seriesSets'], start_time, end_time)
+                series = self.tsanaclient.get_timeseries_gw(parameters, parameters['seriesSets'], start_time, end_time)
                 update_state(self.config, subscription, model_id, ModelState.Training)
                 result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
             else:
@@ -140,7 +140,7 @@ class PluginService():
             
             start_time, end_time = self.get_data_time_range(parameters)
             if self.config.auto_data_retrieving:
-                series = self.tsanaclient.get_timeseries(parameters, parameters['seriesSets'], start_time, end_time)              
+                series = self.tsanaclient.get_timeseries_gw(parameters, parameters['seriesSets'], start_time, end_time)              
             else:
                 series = None
 

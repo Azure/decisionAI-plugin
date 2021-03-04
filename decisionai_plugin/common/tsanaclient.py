@@ -133,6 +133,98 @@ class TSANAClient(object):
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, {}'.format(url, str(e)))
 
+    ################ GATEWAY API ################
+
+    # Query time series from TSANA
+    # Parameters:
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #   series_sets: Array of series set
+    #   start_time: inclusive, the first timestamp to be query
+    #   end_time: exclusive
+    #   top: top sereis number per series set
+    # Return: 
+    #   A array of Series object
+    def get_timeseries_gw(self, parameters, series_sets, start_time, end_time, top=20):
+
+        if start_time > end_time:
+            raise Exception('start_time should be less than or equal to end_time')
+
+        end_str = dt_to_str(end_time)
+        start_str = dt_to_str(start_time)
+
+        multi_series_data = []
+        total_point_num = 0
+
+        # Query each series's tag
+        for data in series_sets:
+            dim = {}
+            if 'dimensionFilter' not in data:
+                data['dimensionFilter'] = data['filters']
+
+            for dimkey in data['dimensionFilter']:
+                dim[dimkey] = [data['dimensionFilter'][dimkey]]
+
+            skip = 0
+            count = 0
+            para = dict(metricId=data['metricId'], dimensionFilter=dim, activeSince=start_str)
+            gran_info = (data['metricMeta']['granularityName'], data['metricMeta']['granularityAmount'])
+            data_point_num_per_series = len(get_time_list(start_time, end_time, gran_info))
+            series_limit_per_call = min(max(100000 // data_point_num_per_series, 1), 1000)
+
+            while True:
+                # Max data points per call is 100000
+                ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                if len(ret['value']) == 0:
+                    break
+
+                series_list = []
+                for s in ret['value']:
+                    series = {}
+                    series['metricsName'] = s['metricId']
+                    series['begin'] = start_str
+                    series['end'] = end_str
+                    series['tagSet'] = s['dimension']
+                    series['returnSeriesId'] = True
+                    series_list.append(series)
+
+                if len(series_list) > 0:                    
+                    ret = self.post(parameters['apiEndpointV2'] + STORAGE_GW_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/api/query_series', data=series_list)
+                    sub_multi_series_data = []
+                    for factor in ret:
+                        if len(factor['values']) <= 0:
+                            continue
+
+                        sub_multi_series_data.append(Series(factor['name'], factor['seriesId'], factor['tags'], factor['columns'], factor['values']))
+                        total_point_num += len(factor['values'])
+                    
+                    multi_series_data.extend(sub_multi_series_data)
+                    count += len(sub_multi_series_data)
+
+                    if count >= top:
+                        break
+                
+                skip = skip + len(series_list)
+                
+            # Max data points limit is 4000000, about 400Mb
+            if total_point_num >= 4000000:
+                log.info("Reach total point number limit 4000000.")
+                break
+
+        if not len(multi_series_data):
+            raise Exception("Series is empty")
+        
+        # dump data
+        '''
+        data_str = ''
+        for series in multi_series_data:
+            data_str += json.dumps(series.__dict__) + '\n'
+        log.info("******get_timeseries******:\nresponse: {}\n******************".format(data_str))
+        '''
+        return multi_series_data
+
     ################ META API ################
 
     # To get the meta of a specific metric from TSANA
@@ -234,7 +326,7 @@ class TSANAClient(object):
                 
                 skip = skip + len(ret['value'])
                 
-            # Max data points limit is 4000000
+            # Max data points limit is 4000000, about 400Mb
             if total_point_num >= 4000000:
                 log.info("Reach total point number limit 4000000.")
                 break
