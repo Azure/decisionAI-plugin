@@ -64,17 +64,70 @@ class PluginService():
             atexit.register(lambda: stop_monitor(config))
             atexit.register(lambda: sched.shutdown())
 
+    # verify parameters
+    # Parameters:
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #       series_sets: Array of series set
+    #   context: request context include subscription and model_id
+    # Return: 
+    #   STATUS_SUCCESS/STATUS_FAIL, error_message
     def do_verify(self, parameters, context:Context):
         return STATUS_SUCCESS, ''
 
+    # check if need to retrain model this time
+    # Parameters:
+    #   current_series_set: series set used in instance now
+    #   current_params: params used in instance now
+    #   new_series_set: series set used in this request
+    #   new_params: params used in this request
+    #   context: request context include subscription and model_id
+    # Return:
+    #   True/False
     def need_retrain(self, current_series_set, current_params, new_series_set, new_params, context:Context):
         return True
 
+    # train model
+    # Parameters:
+    #   model_dir: output dir for model training result, framework will handle model storage
+    #   parameters: training request body which include training parameters
+    #   series: an array of Series object or None if config.auto_data_retrieving is False
+    #     Series include
+    #       series_id: UUID
+    #       dim: dimension dict for this series
+    #       fields: 1-d string array, ['time', '__VAL__', '__FIELD__.ExpectedValue', '__FIELD__.IsAnomaly', '__FIELD__.PredictionValue', '__FIELD__.PredictionModelScore', '__FIELD__.IsSuppress', '__FIELD__.Period', '__FIELD__.CostPoint', '__FIELD__.Mean', '__FIELD__.STD', '__FIELD__.TrendChangeAnnotate', '__FIELD__.TrendChang...tateIgnore', '__FIELD__.AnomalyAnnotate', ...]
+    #       value: 2-d array, [['2020-10-12T17:55:00Z', 1.0, None, None, None, None, None, None, None, None, None, None, None, None, ...]]
+    #   context: request context include subscription and model_id
+    # Return:
+    #   STATUS_SUCCESS/STATUS_FAIL, error_message
     def do_train(self, model_dir, parameters, series, context:Context):
         return STATUS_SUCCESS, ''
 
+    # inference model
+    # Parameters:
+    #   model_dir: input dir for model inference, model has been download and unpacked to this dir
+    #   parameters: inference request body which include inference parameters
+    #   series: an array of Series object or None if config.auto_data_retrieving is False
+    #     Series include
+    #       series_id: UUID
+    #       dim: dimension dict for this series
+    #       fields: 1-d string array, ['time', '__VAL__', '__FIELD__.ExpectedValue', '__FIELD__.IsAnomaly', '__FIELD__.PredictionValue', '__FIELD__.PredictionModelScore', '__FIELD__.IsSuppress', '__FIELD__.Period', '__FIELD__.CostPoint', '__FIELD__.Mean', '__FIELD__.STD', '__FIELD__.TrendChangeAnnotate', '__FIELD__.TrendChang...tateIgnore', '__FIELD__.AnomalyAnnotate', ...]
+    #       value: 2-d array, [['2020-10-12T17:55:00Z', 1.0, None, None, None, None, None, None, None, None, None, None, None, None, ...]]
+    #   context: request context include subscription and model_id
+    # Return:
+    #   result: STATUS_SUCCESS/STATUS_FAIL
+    #   values: a list of value dict or None if you do not need framework to handle inference result storge, this value dict should include
+    #     metricId: UUID
+    #     dimension: dimension dict for this series
+    #     timestamps: string timestamps list
+    #     values: double type value list, matching timestamps 
+    #     fields: field names list, optional
+    #     fieldValues: 2-d array which inlude a value list for each field, optional
+    #   message: error message
     def do_inference(self, model_dir, parameters, series, context:Context):
-        return STATUS_SUCCESS, [], ''
+        return STATUS_SUCCESS, None, ''
 
     def do_delete(self, subscription, model_id):
         return STATUS_SUCCESS, ''

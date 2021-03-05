@@ -146,7 +146,12 @@ class TSANAClient(object):
     #   end_time: exclusive
     #   top: top sereis number per series set
     # Return: 
-    #   A array of Series object
+    #   An array of Series object
+    #     Series include
+    #       series_id: UUID
+    #       dim: dimension dict for this series
+    #       fields: 1-d string array, ['time', '__VAL__', '__FIELD__.ExpectedValue', '__FIELD__.IsAnomaly', '__FIELD__.PredictionValue', '__FIELD__.PredictionModelScore', '__FIELD__.IsSuppress', '__FIELD__.Period', '__FIELD__.CostPoint', '__FIELD__.Mean', '__FIELD__.STD', '__FIELD__.TrendChangeAnnotate', '__FIELD__.TrendChang...tateIgnore', '__FIELD__.AnomalyAnnotate', ...]
+    #       value: 2-d array, [['2020-10-12T17:55:00Z', 1.0, None, None, None, None, None, None, None, None, None, None, None, None, ...]]
     def get_timeseries_gw(self, parameters, series_sets, start_time, end_time, top=20):
 
         if start_time > end_time:
@@ -267,7 +272,7 @@ class TSANAClient(object):
     #   end_time: exclusive
     #   top: top sereis number per series set
     # Return: 
-    #   A array of Series object
+    #   An array of Series object
     def get_timeseries(self, parameters, series_sets, start_time, end_time, top=20):
 
         if start_time > end_time:
