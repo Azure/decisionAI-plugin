@@ -92,7 +92,16 @@ class PluginService():
     # train model
     # Parameters:
     #   model_dir: output dir for model training result, framework will handle model storage
-    #   parameters: training request body which include training parameters
+    #   parameters: training request body which include
+    #     apiEndpoint: api endpoint for specific user
+    #     apiKey: api key for specific user
+    #     groupId: groupId in TSANA
+    #     seriesSets: Array of series set
+    #     startTime: start timestamp
+    #     endTime: end timestamp
+    #     instance: an info dict for this instance which includes
+    #       instanceId: UUID for this instance
+    #       params: training parameters for this request
     #   series: an array of Series object or None if config.auto_data_retrieving is False
     #     Series include
     #       series_id: UUID
@@ -108,7 +117,21 @@ class PluginService():
     # inference model
     # Parameters:
     #   model_dir: input dir for model inference, model has been download and unpacked to this dir
-    #   parameters: inference request body which include inference parameters
+    #   parameters: inference request body which include
+    #     apiEndpoint: api endpoint for specific user
+    #     apiKey: api key for specific user
+    #     groupId: groupId in TSANA
+    #     seriesSets: Array of series set
+    #     startTime: start timestamp
+    #     endTime: end timestamp
+    #     instance: an info dict for this instance which includes
+    #       instanceId: UUID for this instance
+    #       params: inference parameters for this request
+    #       target: a dict for inference result which include
+    #         dimensions: dimension name list for target, defined when register plugin
+    #         metrics: metric name list for target, defined when register plugin
+    #         granularityName: granularity name for target, defined when register plugin
+    #         hookIds: hook id list, defined when register plugin
     #   series: an array of Series object or None if config.auto_data_retrieving is False
     #     Series include
     #       series_id: UUID
@@ -119,8 +142,8 @@ class PluginService():
     # Return:
     #   result: STATUS_SUCCESS/STATUS_FAIL
     #   values: a list of value dict or None if you do not need framework to handle inference result storge, this value dict should include
-    #     metricId: UUID
-    #     dimension: dimension dict for this series
+    #     metricId: UUID, comes from metrics segment of target of request body
+    #     dimension: dimension dict for this series, dimension names come from target segment of request body
     #     timestamps: string timestamps list
     #     values: double type value list, matching timestamps 
     #     fields: field names list, optional
