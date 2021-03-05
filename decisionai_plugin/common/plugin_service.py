@@ -124,7 +124,7 @@ class PluginService():
     #     timestamps: string timestamps list
     #     values: double type value list, matching timestamps 
     #     fields: field names list, optional
-    #     fieldValues: 2-d array which inlude a value list for each field, optional
+    #     fieldValues: 2-d array which include a value list for each field, optional
     #   message: error message
     def do_inference(self, model_dir, parameters, series, context:Context):
         return STATUS_SUCCESS, None, ''
