@@ -5,7 +5,7 @@ import os
 
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
 from .util.constant import USER_ADDR
-from .util.constant import META_API, TSG_API, STORAGE_GW_API
+from .util.constant import INGESTION_API, META_API, TSG_API, STORAGE_GW_API
 from .util.retryrequests import RetryRequests
 from .util.series import Series
 from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
@@ -368,6 +368,8 @@ class TSANAClient(object):
         para = dict(dimensions=dimensions, count=top, startTime=start_time, skip=skip)
         return self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
 
+    ################ INGESTION API ################
+
     # Save a inference result back to TSANA
     # Parameters: 
     #   parameters: a dict object which should includes
@@ -401,7 +403,7 @@ class TSANAClient(object):
                 body['fields'] = fields
                 body['fieldValues'] = field_values
 
-            self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
+            self.post(parameters['apiEndpointV2'] + INGESTION_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
