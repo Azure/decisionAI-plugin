@@ -497,8 +497,9 @@ class TSANAClient(object):
     def save_inference_status(self, task_id, parameters, status, last_error=None):
         try: 
             body = {
+                'taskId': task_id,
                 'operation': 'Inference',
-                'context': parameters,
+                'context': f"groupId: {parameters['groupId']}, groupName: {parameters['groupName']}, instanseId: {parameters['instance']['instanceId']}, instanceName: {parameters['instance']['instanceName']}",
                 'status': status,
                 'lastError': last_error if last_error is not None else ''
                 }
