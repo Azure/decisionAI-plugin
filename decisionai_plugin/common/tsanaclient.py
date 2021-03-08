@@ -504,6 +504,7 @@ class TSANAClient(object):
             self.post(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
+            log.warning(f"Save inference status failed. taskId: {task_id}, error: {str(e)}")
             return STATUS_FAIL, str(e)
 
     # Get inference result from TSANA
