@@ -508,7 +508,7 @@ class TSANAClient(object):
             body = {
                 'taskId': task_id,
                 'operation': 'Inference',
-                'context': json.dumps(context),
+                'context': context,
                 'status': status,
                 'lastError': last_error if last_error is not None else ''
                 }
