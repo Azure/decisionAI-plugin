@@ -504,6 +504,8 @@ class TSANAClient(object):
             context['groupName'] = parameters['groupName']
             context['instanceId'] = parameters['instance']['instanceId']
             context['instanceName'] = parameters['instance']['instanceName']
+            context['startTime'] = parameters['startTime']
+            context['endTime'] = parameters['endTime']
 
             body = {
                 'taskId': task_id,
