@@ -252,12 +252,13 @@ class PluginService():
                     model_state = ModelState.Failed
                     last_error = 'Model storage failed! ' + message
 
+        except Exception as e:
+            model_state = ModelState.Failed
+            last_error = str(e) + '\n' + traceback.format_exc()
+        finally:
             update_state(self.config, subscription, model_id, model_state, None, last_error)
             self.tsanaclient.save_training_status(task_id, parameters, model_state.name)
             self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
-        except Exception as e:    
-            last_error = str(e) + '\n' + traceback.format_exc()
-        finally:
             log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
 
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
@@ -269,13 +270,14 @@ class PluginService():
                     if result != STATUS_SUCCESS:
                         break
 
+        except Exception as e:
+            result = STATUS_FAIL
+            last_error = str(e) + '\n' + traceback.format_exc()
+        finally:
             if result == STATUS_SUCCESS:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
             else:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
-        except Exception as e:    
-            last_error = str(e) + '\n' + traceback.format_exc()
-        finally:
             log.info ("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, last_error if last_error is not None else ''))
 
     def train(self, request):
