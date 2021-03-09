@@ -163,18 +163,20 @@ class PluginService():
 
         log.info("Start train wrapper for model %s by %s " % (model_id, subscription))
         try:
+            self.tsanaclient.save_training_status(task_id, parameters, ModelState.Pending.name)
+            
             model_dir = os.path.join(self.config.model_dir, subscription + '_' + model_id + '_' + str(time.time()))
             os.makedirs(model_dir, exist_ok=True)
 
+            series = None
             if self.config.auto_data_retrieving:
                 start_time, end_time = self.get_data_time_range(parameters, True)
                 series = self.tsanaclient.get_timeseries_gw(parameters, parameters['seriesSets'], start_time, end_time)
-                update_state(self.config, subscription, model_id, ModelState.Training)
-                result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
-            else:
-                update_state(self.config, subscription, model_id, ModelState.Training)
-                result, message = self.do_train(model_dir, parameters, None, Context(subscription, model_id, task_id))
             
+            update_state(self.config, subscription, model_id, ModelState.Training)
+            self.tsanaclient.save_training_status(task_id, parameters, ModelState.Training.name)
+            result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
+
             if result == STATUS_SUCCESS:
                 if callback is not None:
                     callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, message)
@@ -251,6 +253,7 @@ class PluginService():
                     last_error = 'Model storage failed! ' + message
 
             update_state(self.config, subscription, model_id, model_state, None, last_error)
+            self.tsanaclient.save_training_status(task_id, parameters, model_state.name)
             self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
         except Exception as e:    
             last_error = str(e) + '\n' + traceback.format_exc()

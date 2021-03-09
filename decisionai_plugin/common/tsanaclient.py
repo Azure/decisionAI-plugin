@@ -484,7 +484,44 @@ class TSANAClient(object):
         except Exception as e:
             return STATUS_FAIL, str(e)
 
-    # Save a inference status back to TSANA
+    # Save training task status back to TSANA
+    # Parameters: 
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #       instance: instance object, which is copied from the inference request, or from the entity
+    #   status: ModelState:Pending, Training, Ready, Deleted, Failed
+    #   last_error: last error message
+    # Return:
+    #   result: STATE_SUCCESS / STATE_FAIL
+    #   message: description for the result
+    def save_training_status(self, task_id, parameters, status, last_error=None):
+        try: 
+            
+            context = {}
+            context['groupId'] = parameters['groupId']
+            context['groupName'] = parameters['groupName']
+            context['instanceId'] = parameters['instance']['instanceId']
+            context['instanceName'] = parameters['instance']['instanceName']
+            context['startTime'] = parameters['startTime']
+            context['endTime'] = parameters['endTime']
+
+            body = {
+                'taskId': task_id,
+                'operation': 'Train',
+                'context': context,
+                'status': status,
+                'lastError': last_error if last_error is not None else ''
+                }
+               
+            self.post(parameters['apiEndpointV2'] + TSG_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
+            return STATUS_SUCCESS, ''
+        except Exception as e:
+            log.warning(f"Save training status failed. taskId: {task_id}, error: {str(e)}")
+            return STATUS_FAIL, str(e)
+
+    # Save inference task status back to TSANA
     # Parameters: 
     #   parameters: a dict object which should includes
     #       apiEndpoint: api endpoint for specific user
