@@ -27,7 +27,7 @@ from .util.timeutil import str_to_dt
 #async infras
 #executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
-executor = ThreadPoolExecutor()
+executor = ThreadPoolExecutor(max_workers=2)
 loop = asyncio.new_event_loop()
 
 #monitor infras
