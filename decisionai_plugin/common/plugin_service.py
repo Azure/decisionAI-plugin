@@ -14,10 +14,12 @@ import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import jsonify, make_response
 
+from .tsanaclient import IS_MT
 from .tsanaclient import TSANAClient
 from .util.constant import InferenceState
 from .util.constant import ModelState
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
+from .util.constant import INSTANCE_ID_KEY
 from .util.context import Context
 from .util.meta import insert_meta, get_meta, update_state, get_model_list, clear_state_when_necessary
 from .util.model import upload_model, download_model
@@ -44,7 +46,6 @@ def load_config(path):
         return config
     except Exception:
         return None
-
 
 class PluginService():
     def __init__(self, trainable=True):
@@ -282,6 +283,9 @@ class PluginService():
 
     def train(self, request):
         request_body = json.loads(request.data)
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
+
         instance_id = request_body['instance']['instanceId']
         if not self.trainable:
             return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
@@ -319,6 +323,9 @@ class PluginService():
 
     def inference(self, request, model_id):
         request_body = json.loads(request.data)
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
+
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
         
@@ -383,6 +390,9 @@ class PluginService():
 
     def verify(self, request):
         request_body = json.loads(request.data)
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
+
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
         try:
