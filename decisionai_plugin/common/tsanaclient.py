@@ -181,7 +181,7 @@ class TSANAClient(object):
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -302,7 +302,7 @@ class TSANAClient(object):
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(parameters['apiEndpointV2'] + META_API, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
