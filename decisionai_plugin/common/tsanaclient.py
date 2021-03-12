@@ -195,7 +195,7 @@ class TSANAClient(object):
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -318,7 +318,7 @@ class TSANAClient(object):
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$top={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
