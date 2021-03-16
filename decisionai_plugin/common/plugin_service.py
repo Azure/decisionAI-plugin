@@ -26,6 +26,9 @@ from .util.model import upload_model, download_model
 from .util.monitor import init_monitor, run_monitor, stop_monitor
 from .util.timeutil import str_to_dt
 
+import zlib
+import base64
+
 #async infras
 #executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
@@ -333,18 +336,25 @@ class PluginService():
             meta = get_meta(self.config, subscription, model_id)
             if meta is None:
                 return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
-                
+
             if meta['state'] != ModelState.Ready.name:
                 return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Cannot do inference right now, status is ' + meta['state'], modelState=meta['state'])), 400)
 
-            current_set = json.dumps(json.loads(meta['series_set']), sort_keys=True)
-            current_params = json.dumps(json.loads(meta['para']), sort_keys=True)
+            try:
+                series_set = json.loads(meta['series_set'])
+            except:
+                series_set = json.loads(zlib.decompress(base64.b64decode(meta['series_set'].encode("ascii"))).decode('utf-8'))
+
+            para = json.loads(meta['para'])
+
+            current_set = json.dumps(series_set, sort_keys=True)
+            current_params = json.dumps(para, sort_keys=True)
 
             new_set = json.dumps(request_body['seriesSets'], sort_keys=True)
             new_params = json.dumps(request_body['instance']['params'], sort_keys=True)
 
             if current_set != new_set or current_params != new_params:
-                if self.need_retrain(json.loads(meta['series_set']), json.loads(meta['para']), request_body['seriesSets'], request_body['instance']['params'], Context(subscription, model_id, '')):
+                if self.need_retrain(series_set, para, request_body['seriesSets'], request_body['instance']['params'], Context(subscription, model_id, '')):
                     return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Inconsistent series sets or params!', modelState=meta['state'])), 400)
 
         log.info('Create inference task')
