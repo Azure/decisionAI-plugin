@@ -327,17 +327,17 @@ class TSANAClient(object):
                 if len(ret['value']) == 0:
                     break
 
-                series = []
+                series_list = []
                 for s in ret['value']:
                     s['startTime'] = start_str
                     s['endTime'] = end_str
                     s['returnSeriesId'] = True
-                    series.append(s)
+                    series_list.append(s)
                 
-                if len(series) > 0:                    
-                    ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/series/data', data=dict(value=series))
+                if len(series_list) > 0:                    
+                    ret_data = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/series/data', data=dict(value=series_list))
                     sub_multi_series_data = []
-                    for factor in ret['value']:
+                    for factor in ret_data['value']:
                         if len(factor['values']) <= 0:
                             continue
 
@@ -350,7 +350,7 @@ class TSANAClient(object):
                     if count >= top:
                         break
                 
-                skip = skip + len(ret['value'])
+                skip = skip + len(series_list)
                 loop = loop + 1
                 if loop % 10 == 0:
                     log.info(f"Loop times: {loop}, total series num: {len(multi_series_data)}, total points num {total_point_num}.")
