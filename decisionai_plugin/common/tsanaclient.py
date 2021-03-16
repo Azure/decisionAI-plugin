@@ -192,6 +192,7 @@ class TSANAClient(object):
             gran_info = (data['metricMeta']['granularityName'], data['metricMeta']['granularityAmount'])
             data_point_num_per_series = len(get_time_list(start_time, end_time, gran_info))
             series_limit_per_call = min(max(100000 // data_point_num_per_series, 1), 1000)
+            loop = 0
 
             while True:
                 # Max data points per call is 100000
@@ -210,9 +211,9 @@ class TSANAClient(object):
                     series_list.append(series)
 
                 if len(series_list) > 0:                    
-                    ret = self.post(storage_gw_endpoint, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/api/query_series', data=series_list)
+                    ret_data = self.post(storage_gw_endpoint, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/api/query_series', data=series_list)
                     sub_multi_series_data = []
-                    for factor in ret:
+                    for factor in ret_data:
                         if len(factor['values']) <= 0:
                             continue
 
@@ -228,7 +229,10 @@ class TSANAClient(object):
                         break
                 
                 skip = skip + len(series_list)
-                
+                loop = loop + 1
+                if loop % 10 == 0:
+                    log.info(f"Loop times: {loop}, total series num: {len(multi_series_data)}, total points num {total_point_num}.")
+
             # Max data points limit is 4000000, about 400Mb
             if total_point_num >= 4000000:
                 log.info("Reach total point number limit 4000000.")
