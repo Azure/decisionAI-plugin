@@ -511,9 +511,6 @@ class TSANAClient(object):
     #   message: description for the result
     def save_training_status(self, task_id, parameters, status, last_error=None):
         try: 
-            if not parameters['manually']:
-                return STATUS_SUCCESS, ''
-
             context = {}
             context['groupId'] = parameters['groupId']
             context['groupName'] = parameters['groupName']
