@@ -17,7 +17,7 @@ from telemetry import log
 
 import pandas as pd
 
-REQUEST_TIMEOUT_SECONDS = 300
+REQUEST_TIMEOUT_SECONDS = 120
 
 IS_MT = True if os.environ.get('MULTI_TENANT', 'false') == 'true' else False
 
