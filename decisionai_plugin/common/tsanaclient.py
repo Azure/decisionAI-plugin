@@ -2,6 +2,7 @@ import json
 import math
 import datetime
 import os
+import time
 
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
 from .util.constant import USER_ADDR
@@ -231,6 +232,7 @@ class TSANAClient(object):
                 skip = skip + len(series_list)
                 loop = loop + 1
                 if loop % 10 == 0:
+                    time.sleep(0.001)
                     log.info(f"Loop times: {loop}, total series num: {len(multi_series_data)}, total points num {total_point_num}.")
 
             # Max data points limit is 4000000, about 400Mb
@@ -347,6 +349,7 @@ class TSANAClient(object):
                 skip = skip + len(series_list)
                 loop = loop + 1
                 if loop % 10 == 0:
+                    time.sleep(0.001)
                     log.info(f"Loop times: {loop}, total series num: {len(multi_series_data)}, total points num {total_point_num}.")
                 
             # Max data points limit is 4000000, about 400Mb
