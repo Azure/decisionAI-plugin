@@ -241,13 +241,7 @@ class TSANAClient(object):
         if not len(multi_series_data):
             raise Exception("Series is empty")
         
-        # dump data
-        '''
-        data_str = ''
-        for series in multi_series_data:
-            data_str += json.dumps(series.__dict__) + '\n'
-        log.info("******get_timeseries******:\nresponse: {}\n******************".format(data_str))
-        '''
+        log.info(f"Get time series completed! Total series num: {len(multi_series_data)}, total points num {total_point_num}.")
         return multi_series_data
 
     ################ META API ################
@@ -363,13 +357,7 @@ class TSANAClient(object):
         if not len(multi_series_data):
             raise Exception("Series is empty")
         
-        # dump data
-        '''
-        data_str = ''
-        for series in multi_series_data:
-            data_str += json.dumps(series.__dict__) + '\n'
-        log.info("******get_timeseries******:\nresponse: {}\n******************".format(data_str))
-        '''
+        log.info(f"Get time series completed! Total series num: {len(multi_series_data)}, total points num {total_point_num}.")
         return multi_series_data
 
     # Get ranked dimensions
