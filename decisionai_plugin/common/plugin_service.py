@@ -300,7 +300,7 @@ class PluginService():
 
         models_in_train = []
         for model in get_model_list(self.config, subscription):
-            if 'instanceId' in model and model['instanceId'] == request_body['instance']['instanceId'] and model['state'] == ModelState.Training.name:
+            if 'instanceId' in model and model['instanceId'] == request_body['instance']['instanceId'] and (model['state'] == ModelState.Training.name or model['state'] == ModelState.Pending.name):
                 models_in_train.append(model['modelId'])
 
         if len(models_in_train) >= self.config.models_in_training_limit_per_instance:
