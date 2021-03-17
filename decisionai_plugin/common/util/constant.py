@@ -40,4 +40,5 @@ META_ENDPOINT = "http://powerai-metadata3p-api.kensho2-service.svc.cluster.local
 INGESTION_ENDPOINT = "http://powerai-ingestion-api.kensho2-service.svc.cluster.local:8099"
 TSG_ENDPOINT = "http://powerai-time-series-group-api-3p.kensho2-service.svc.cluster.local:6666"
 INSTANCE_ID_PLACEHOLDER = '__INSTANCE_ID__'
-STORAGE_GW_ENDPOINT_PATTERN = "http://ma-gw-__INSTANCE_ID__.__INSTANCE_ID__.svc.cluster.local:8300"
+STORAGE_GW_MT_ENDPOINT_PATTERN = "http://ma-gw-__INSTANCE_ID__.__INSTANCE_ID__.svc.cluster.local:8300"
+STORAGE_GW_ST_ENDPOINT_PATTERN = "http://storage-gw-server.kensho2-infra.svc.cluster.local:8300"

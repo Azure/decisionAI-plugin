@@ -2,14 +2,13 @@ import json
 import math
 import datetime
 import os
-import time
 
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
 from .util.constant import USER_ADDR
 from .util.constant import INGESTION_API, META_API, TSG_API, STORAGE_GW_API
 from .util.constant import INSTANCE_ID_KEY
 from .util.constant import INSTANCE_ID_PLACEHOLDER
-from .util.constant import META_ENDPOINT, TSG_ENDPOINT, INGESTION_ENDPOINT, STORAGE_GW_ENDPOINT_PATTERN
+from .util.constant import META_ENDPOINT, TSG_ENDPOINT, INGESTION_ENDPOINT, STORAGE_GW_MT_ENDPOINT_PATTERN, STORAGE_GW_ST_ENDPOINT_PATTERN
 from .util.retryrequests import RetryRequests
 from .util.series import Series
 from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
@@ -21,6 +20,7 @@ import pandas as pd
 REQUEST_TIMEOUT_SECONDS = 120
 
 IS_MT = True if os.environ.get('MULTI_TENANT', 'false') == 'true' else False
+IS_INTERNAL = True if os.environ.get('MA_INTERNAL', 'false') == 'true' else False
 
 def get_field_idx(fields, target):
     for idx, field in enumerate(fields):
@@ -165,18 +165,27 @@ class TSANAClient(object):
 
         if start_time > end_time:
             raise Exception('start_time should be less than or equal to end_time')
-
-        if IS_MT:
-            storage_gw_endpoint = STORAGE_GW_ENDPOINT_PATTERN
-            storage_gw_endpoint = storage_gw_endpoint.replace(INSTANCE_ID_PLACEHOLDER, parameters[INSTANCE_ID_KEY])
+        
+        if IS_INTERNAL:
+            if IS_MT:
+                storage_gw_endpoint = STORAGE_GW_MT_ENDPOINT_PATTERN
+                instance_id = parameters[INSTANCE_ID_KEY]
+                storage_gw_endpoint = storage_gw_endpoint.replace(INSTANCE_ID_PLACEHOLDER, instance_id)
+            else:
+                storage_gw_endpoint = STORAGE_GW_ST_ENDPOINT_PATTERN
+                instance_id = None
+            meta_endpoint = META_ENDPOINT
         else:
             storage_gw_endpoint = parameters['apiEndpointV2'] + STORAGE_GW_API
-            
+            instance_id = None
+            meta_endpoint = parameters['apiEndpointV2'] + META_API
+
         end_str = dt_to_str(end_time)
         start_str = dt_to_str(start_time)
 
         multi_series_data = []
         total_point_num = 0
+        loop = 0
 
         # Query each series's tag
         for data in series_sets:
@@ -193,11 +202,10 @@ class TSANAClient(object):
             gran_info = (data['metricMeta']['granularityName'], data['metricMeta']['granularityAmount'])
             data_point_num_per_series = len(get_time_list(start_time, end_time, gran_info))
             series_limit_per_call = min(max(100000 // data_point_num_per_series, 1), 1000)
-            loop = 0
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(meta_endpoint, instance_id, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -212,7 +220,7 @@ class TSANAClient(object):
                     series_list.append(series)
 
                 if len(series_list) > 0:                    
-                    ret_data = self.post(storage_gw_endpoint, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/api/query_series', data=series_list)
+                    ret_data = self.post(storage_gw_endpoint, instance_id, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/api/query_series', data=series_list)
                     sub_multi_series_data = []
                     for factor in ret_data:
                         if len(factor['values']) <= 0:
@@ -232,7 +240,6 @@ class TSANAClient(object):
                 skip = skip + len(series_list)
                 loop = loop + 1
                 if loop % 10 == 0:
-                    time.sleep(0.001)
                     log.info(f"Loop times: {loop}, total series num: {len(multi_series_data)}, total points num {total_point_num}.")
 
             # Max data points limit is 4000000, about 400Mb
@@ -258,7 +265,7 @@ class TSANAClient(object):
     # Return:
     #   the meta of the specified metric, or None if there is something wrong. 
     def get_metric_meta(self, parameters, metric_id):
-        return self.get(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + metric_id + '/meta')
+        return self.get(META_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + metric_id + '/meta')
 
     # To get the dimension values of a specific dimension of a metric from TSANA
     # Parameters:
@@ -271,7 +278,7 @@ class TSANAClient(object):
     # Return:
     #   the dimension values of a specific dimension of a metric, or None if there is something wrong. 
     def get_dimesion_values(self, parameters, metric_id, dimension_name):
-        dims = self.get(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + metric_id + '/dimensions')
+        dims = self.get(META_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + metric_id + '/dimensions')
         if 'dimensions' in dims and dimension_name in dims['dimensions']:
             return dims['dimensions'][dimension_name]
         else:
@@ -299,6 +306,7 @@ class TSANAClient(object):
 
         multi_series_data = []
         total_point_num = 0
+        loop = 0
 
         # Query each series's tag
         for data in series_sets:
@@ -315,11 +323,10 @@ class TSANAClient(object):
             gran_info = (data['metricMeta']['granularityName'], data['metricMeta']['granularityAmount'])
             data_point_num_per_series = len(get_time_list(start_time, end_time, gran_info))
             series_limit_per_call = min(max(100000 // data_point_num_per_series, 1), 1000)
-            loop = 0
 
             while True:
                 # Max data points per call is 100000
-                ret = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
+                ret = self.post(META_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/' + data['metricId'] + '/series/query?$skip={}&$maxPageSize={}'.format(skip, series_limit_per_call), data=para)
                 if len(ret['value']) == 0:
                     break
 
@@ -331,7 +338,7 @@ class TSANAClient(object):
                     series_list.append(s)
                 
                 if len(series_list) > 0:                    
-                    ret_data = self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/series/data', data=dict(value=series_list))
+                    ret_data = self.post(META_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/metrics/series/data', data=dict(value=series_list))
                     sub_multi_series_data = []
                     for factor in ret_data['value']:
                         if len(factor['values']) <= 0:
@@ -349,7 +356,6 @@ class TSANAClient(object):
                 skip = skip + len(series_list)
                 loop = loop + 1
                 if loop % 10 == 0:
-                    time.sleep(0.001)
                     log.info(f"Loop times: {loop}, total series num: {len(multi_series_data)}, total points num {total_point_num}.")
                 
             # Max data points limit is 4000000, about 400Mb
@@ -379,7 +385,7 @@ class TSANAClient(object):
     def rank_series(self, parameters, metric_id, dimensions, start_time, top=10, skip=0):
         url = f'/metrics/{metric_id}/rank-series'
         para = dict(dimensions=dimensions, count=top, startTime=start_time, skip=skip)
-        return self.post(META_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
+        return self.post(META_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
 
     ################ INGESTION API ################
 
@@ -416,7 +422,7 @@ class TSANAClient(object):
                 body['fields'] = fields
                 body['fieldValues'] = field_values
 
-            self.post(INGESTION_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + INGESTION_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
+            self.post(INGESTION_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + INGESTION_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/pushData', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -432,7 +438,7 @@ class TSANAClient(object):
     # Return:
     #   detailed info of the specified group 
     def get_group_detail(self, parameters):
-        return self.get(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'])
+        return self.get(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'])
 
     # Save a training result back to TSANA
     # Parameters: 
@@ -455,7 +461,7 @@ class TSANAClient(object):
                 'message': message
             }
 
-            self.put(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
+            self.put(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -492,7 +498,7 @@ class TSANAClient(object):
                         'result': item['value'],
                         'status': item['status']
                     })
-                self.post(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
+                self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -527,7 +533,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             log.warning(f"Save training status failed. taskId: {task_id}, error: {str(e)}")
@@ -566,7 +572,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             log.warning(f"Save inference status failed. taskId: {task_id}, error: {str(e)}")
@@ -585,7 +591,7 @@ class TSANAClient(object):
     #   value: inference result array
     def get_inference_result(self, parameters):
         try: 
-            ret = self.get(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
+            ret = self.get(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
                                 + parameters['groupId'] 
                                 + '/appInstances/' 
                                 + parameters['instance']['instanceId'] 
@@ -613,7 +619,7 @@ class TSANAClient(object):
         try:
             url = '/timeSeriesGroups/alert'
             para = dict(alertType=alert_type, message=message)
-            self.post(TSG_ENDPOINT if IS_MT else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, url, data=para)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, repr(e)
