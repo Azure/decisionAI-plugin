@@ -28,6 +28,7 @@ from .util.timeutil import str_to_dt
 
 import zlib
 import base64
+import gc
 
 #async infras
 #executor = ProcessPoolExecutor()
@@ -198,6 +199,7 @@ class PluginService():
         total_time = (time.time() - start)
         log.duration("training_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
         log.count("training_task_count", 1,  model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        gc.collect()
 
         return STATUS_SUCCESS, ''
 
@@ -241,7 +243,8 @@ class PluginService():
         total_time = (time.time() - start)
         log.duration("inference_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
         log.count("inference_task_count", 1,  model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
-
+        gc.collect()
+        
         return STATUS_SUCCESS, ''
 
     def train_callback(self, subscription, model_id, task_id, model_dir, parameters, model_state, last_error=None):
