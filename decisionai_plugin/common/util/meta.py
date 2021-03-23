@@ -11,18 +11,21 @@ from telemetry import log
 
 from .monitor import thumbprint
 
+import zlib
+import base64
+
 def insert_meta(config, subscription, model_id, meta):
     azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
     if not azure_table.exists_table(config.az_tsana_meta_table):
         azure_table.create_table(config.az_tsana_meta_table)
     azure_table.insert_or_replace_entity(config.az_tsana_meta_table, subscription, 
             model_id, 
-            group_id=meta['groupId'], 
-            app_id=meta['instance']['appId'], 
-            app_name=meta['instance']['appName'], 
-            series_set=json.dumps(meta['seriesSets']), 
-            inst_name=meta['instance']['instanceName'], 
-            inst_id=meta['instance']['instanceId'], 
+            group_id=meta['groupId'],
+            app_id=meta['instance']['appId'],
+            app_name=meta['instance']['appName'],
+            series_set=base64.b64encode(zlib.compress(json.dumps(meta['seriesSets']).encode('utf-8'))).decode("ascii"),
+            inst_name=meta['instance']['instanceName'],
+            inst_id=meta['instance']['instanceId'],
             para=json.dumps(meta['instance']['params']),
             state=ModelState.Pending.name,
             context='',
@@ -30,7 +33,6 @@ def insert_meta(config, subscription, model_id, meta):
             ctime=time.time(),
             mtime=time.time(),
             owner=thumbprint)
-
 # Get a model entity from meta
 # Parameters: 
 #   config: a dict object which should include AZ_META_TABLE, AZ_MONITOR_TABLE, TSANA_APP_NAME, TRAINING_OWNER_LIFE
@@ -45,6 +47,7 @@ def get_meta(config, subscription, model_id):
             raise Exception('Meta table not exists')
 
         entity = azure_table.get_entity(config.az_tsana_meta_table, subscription, model_id)
+
         return entity
     except Exception as e: 
         log.error("Get entity error from %s with model_id %s and subscription %s, exception: %s." % (config.az_tsana_meta_table, model_id, subscription, str(e)))

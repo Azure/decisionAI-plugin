@@ -14,20 +14,26 @@ import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import jsonify, make_response
 
+from .tsanaclient import IS_MT
 from .tsanaclient import TSANAClient
 from .util.constant import InferenceState
 from .util.constant import ModelState
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
+from .util.constant import INSTANCE_ID_KEY
 from .util.context import Context
 from .util.meta import insert_meta, get_meta, update_state, get_model_list, clear_state_when_necessary
 from .util.model import upload_model, download_model
 from .util.monitor import init_monitor, run_monitor, stop_monitor
 from .util.timeutil import str_to_dt
 
+import zlib
+import base64
+import gc
+
 #async infras
 #executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
-executor = ThreadPoolExecutor(max_workers=2)
+executor = ThreadPoolExecutor(max_workers=1)
 loop = asyncio.new_event_loop()
 
 #monitor infras
@@ -44,7 +50,6 @@ def load_config(path):
         return config
     except Exception:
         return None
-
 
 class PluginService():
     def __init__(self, trainable=True):
@@ -163,18 +168,20 @@ class PluginService():
 
         log.info("Start train wrapper for model %s by %s " % (model_id, subscription))
         try:
+            self.tsanaclient.save_training_status(task_id, parameters, ModelState.Pending.name)
+            
             model_dir = os.path.join(self.config.model_dir, subscription + '_' + model_id + '_' + str(time.time()))
             os.makedirs(model_dir, exist_ok=True)
 
+            series = None
             if self.config.auto_data_retrieving:
                 start_time, end_time = self.get_data_time_range(parameters, True)
                 series = self.tsanaclient.get_timeseries_gw(parameters, parameters['seriesSets'], start_time, end_time)
-                update_state(self.config, subscription, model_id, ModelState.Training)
-                result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
-            else:
-                update_state(self.config, subscription, model_id, ModelState.Training)
-                result, message = self.do_train(model_dir, parameters, None, Context(subscription, model_id, task_id))
             
+            update_state(self.config, subscription, model_id, ModelState.Training)
+            self.tsanaclient.save_training_status(task_id, parameters, ModelState.Training.name)
+            result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
+
             if result == STATUS_SUCCESS:
                 if callback is not None:
                     callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, message)
@@ -192,6 +199,7 @@ class PluginService():
         total_time = (time.time() - start)
         log.duration("training_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
         log.count("training_task_count", 1,  model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
+        gc.collect()
 
         return STATUS_SUCCESS, ''
 
@@ -235,7 +243,8 @@ class PluginService():
         total_time = (time.time() - start)
         log.duration("inference_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
         log.count("inference_task_count", 1,  model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
-
+        gc.collect()
+        
         return STATUS_SUCCESS, ''
 
     def train_callback(self, subscription, model_id, task_id, model_dir, parameters, model_state, last_error=None):
@@ -250,11 +259,13 @@ class PluginService():
                     model_state = ModelState.Failed
                     last_error = 'Model storage failed! ' + message
 
-            update_state(self.config, subscription, model_id, model_state, None, last_error)
-            self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
-        except Exception as e:    
+        except Exception as e:
+            model_state = ModelState.Failed
             last_error = str(e) + '\n' + traceback.format_exc()
         finally:
+            update_state(self.config, subscription, model_id, model_state, None, last_error)
+            self.tsanaclient.save_training_status(task_id, parameters, model_state.name)
+            self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
             log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
 
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
@@ -266,17 +277,21 @@ class PluginService():
                     if result != STATUS_SUCCESS:
                         break
 
+        except Exception as e:
+            result = STATUS_FAIL
+            last_error = str(e) + '\n' + traceback.format_exc()
+        finally:
             if result == STATUS_SUCCESS:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
             else:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
-        except Exception as e:    
-            last_error = str(e) + '\n' + traceback.format_exc()
-        finally:
             log.info ("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, last_error if last_error is not None else ''))
 
     def train(self, request):
         request_body = json.loads(request.data)
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
+
         instance_id = request_body['instance']['instanceId']
         if not self.trainable:
             return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
@@ -288,7 +303,7 @@ class PluginService():
 
         models_in_train = []
         for model in get_model_list(self.config, subscription):
-            if 'instanceId' in model and model['instanceId'] == request_body['instance']['instanceId'] and model['state'] == ModelState.Training.name:
+            if 'instanceId' in model and model['instanceId'] == request_body['instance']['instanceId'] and (model['state'] == ModelState.Training.name or model['state'] == ModelState.Pending.name):
                 models_in_train.append(model['modelId'])
 
         if len(models_in_train) >= self.config.models_in_training_limit_per_instance:
@@ -314,6 +329,9 @@ class PluginService():
 
     def inference(self, request, model_id):
         request_body = json.loads(request.data)
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
+
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
         
@@ -321,18 +339,25 @@ class PluginService():
             meta = get_meta(self.config, subscription, model_id)
             if meta is None:
                 return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
-                
+
             if meta['state'] != ModelState.Ready.name:
                 return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Cannot do inference right now, status is ' + meta['state'], modelState=meta['state'])), 400)
 
-            current_set = json.dumps(json.loads(meta['series_set']), sort_keys=True)
-            current_params = json.dumps(json.loads(meta['para']), sort_keys=True)
+            try:
+                series_set = json.loads(meta['series_set'])
+            except:
+                series_set = json.loads(zlib.decompress(base64.b64decode(meta['series_set'].encode("ascii"))).decode('utf-8'))
+
+            para = json.loads(meta['para'])
+
+            current_set = json.dumps(series_set, sort_keys=True)
+            current_params = json.dumps(para, sort_keys=True)
 
             new_set = json.dumps(request_body['seriesSets'], sort_keys=True)
             new_params = json.dumps(request_body['instance']['params'], sort_keys=True)
 
             if current_set != new_set or current_params != new_params:
-                if self.need_retrain(json.loads(meta['series_set']), json.loads(meta['para']), request_body['seriesSets'], request_body['instance']['params'], Context(subscription, model_id, '')):
+                if self.need_retrain(series_set, para, request_body['seriesSets'], request_body['instance']['params'], Context(subscription, model_id, '')):
                     return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_FAIL, message='Inconsistent series sets or params!', modelState=meta['state'])), 400)
 
         log.info('Create inference task')
@@ -378,6 +403,9 @@ class PluginService():
 
     def verify(self, request):
         request_body = json.loads(request.data)
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
+
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
         try:

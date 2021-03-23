@@ -99,8 +99,12 @@ class LrPluginService(PluginService):
                 r2scores.append(r2_score(y, y_new))
 
             dimension = dict(seriesId=factor.series_id)
-            results.append(dict(metricId=parameters['instance']['target']['metrics'][0]['metricId'], dimension=dimension, timestamps=timestamps, values=values))
-            results.append(dict(metricId=parameters['instance']['target']['metrics'][1]['metricId'], dimension=dimension, timestamps=timestamps, values=mses))
-            results.append(dict(metricId=parameters['instance']['target']['metrics'][2]['metricId'], dimension=dimension, timestamps=timestamps, values=r2scores))
+            metric_value = next(m for m in parameters['instance']['target']['metrics'] if m['metricName'] == 'value')
+            metric_mse = next(m for m in parameters['instance']['target']['metrics'] if m['metricName'] == 'mse')
+            metric_r2score = next(m for m in parameters['instance']['target']['metrics'] if m['metricName'] == 'r2score')
+
+            results.append(dict(metricId=metric_value['metricId'], dimension=dimension, timestamps=timestamps, values=values))
+            results.append(dict(metricId=metric_mse['metricId'], dimension=dimension, timestamps=timestamps, values=mses))
+            results.append(dict(metricId=metric_r2score['metricId'], dimension=dimension, timestamps=timestamps, values=r2scores))
 
         return STATUS_SUCCESS, results, ''
