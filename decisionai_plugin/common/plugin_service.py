@@ -33,7 +33,7 @@ import gc
 #async infras
 #executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
-executor = ThreadPoolExecutor(max_workers=1)
+executor = ThreadPoolExecutor(max_workers=3)
 loop = asyncio.new_event_loop()
 
 #monitor infras
