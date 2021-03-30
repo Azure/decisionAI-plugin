@@ -389,6 +389,35 @@ class TSANAClient(object):
 
     ################ INGESTION API ################
 
+    # Query data from original data source for datafeed which does not need ingestion
+    # Parameters:
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #   datafeed_id: datafeed id for source data
+    #   start_time: inclusive, the first timestamp to be query
+    #   end_time: exclusive
+    # Return: 
+    #   LoadSchemaResponse:
+    #       SeriesNumber: long number of rows
+    #       Schemas:columns, dict<string, string> which includes <column_name, column_type>
+    #       PreviewData: list<dict<String, Object>> which includes <column_name, column_value>
+    #       Err: error code
+    def get_source_data(self, parameters, datafeed_id, start_time, end_time):
+            
+        if start_time > end_time:
+            raise Exception('start_time should be less than or equal to end_time')
+
+        body = {
+                "datafeedId": datafeed_id,
+                "startTime": dt_to_str(start_time),
+                "endTime": dt_to_str(end_time)
+            }
+
+        ret_data = self.post(INGESTION_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + INGESTION_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/loadSchemaV2', body)
+        return ret_data
+
     # Save a inference result back to TSANA
     # Parameters: 
     #   parameters: a dict object which should includes
