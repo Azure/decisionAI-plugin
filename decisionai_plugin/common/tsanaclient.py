@@ -415,7 +415,7 @@ class TSANAClient(object):
                 "endTime": dt_to_str(end_time)
             }
 
-        ret_data = self.post(INGESTION_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + INGESTION_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/loadSchemaV2', body)
+        ret_data = self.post(INGESTION_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + INGESTION_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/loadSourceData', body)
         return ret_data
 
     # Save a inference result back to TSANA
