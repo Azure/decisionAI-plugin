@@ -68,8 +68,8 @@ class TSANAClient(object):
             if r.status_code != 204:
                 try:
                     return r.json()
-                except ValueError:
-                    return r.content
+                except ValueError as e:
+                    return "ValueError: " + str(e) + " Content: " + r.content
         except Exception as e:
             raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
 
