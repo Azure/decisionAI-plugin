@@ -2,8 +2,13 @@ from azure.cosmosdb.table.tableservice import TableService
 from azure.cosmosdb.table.models import Entity
 
 class AzureTable():
-    def __init__(self, account_name, account_key):
-        self.table_service = TableService(account_name=account_name, account_key=account_key)
+    def __init__(self, account_name, account_key=None, sas_token=None):
+        if account_key:
+            self.table_service = TableService(account_name=account_name, account_key=account_key)
+        elif sas_token:
+            self.table_service = TableService(account_name=account_name, sas_token=sas_token)
+        else:
+            raise Exception("Empty account key or sas token")
 
     def create_table(self, table_name):
         return self.table_service.create_table(table_name)

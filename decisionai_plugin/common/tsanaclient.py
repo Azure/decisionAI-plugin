@@ -9,6 +9,7 @@ from .util.constant import INGESTION_API, META_API, TSG_API, STORAGE_GW_API
 from .util.constant import INSTANCE_ID_KEY
 from .util.constant import INSTANCE_ID_PLACEHOLDER
 from .util.constant import META_ENDPOINT, TSG_ENDPOINT, INGESTION_ENDPOINT, STORAGE_GW_MT_ENDPOINT_PATTERN, STORAGE_GW_ST_ENDPOINT_PATTERN
+from .util.constant import IS_INTERNAL, IS_MT
 from .util.retryrequests import RetryRequests
 from .util.series import Series
 from .util.timeutil import get_time_offset, str_to_dt, dt_to_str, get_time_list
@@ -18,9 +19,6 @@ from telemetry import log
 import pandas as pd
 
 REQUEST_TIMEOUT_SECONDS = 120
-
-IS_MT = True if os.environ.get('MULTI_TENANT', 'false') == 'true' else False
-IS_INTERNAL = True if os.environ.get('MA_INTERNAL', 'false') == 'true' else False
 
 def get_field_idx(fields, target):
     for idx, field in enumerate(fields):

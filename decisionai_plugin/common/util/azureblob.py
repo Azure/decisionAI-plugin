@@ -1,6 +1,7 @@
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from azure.core.exceptions import ResourceExistsError
-from azure.storage.blob import generate_container_sas, generate_blob_sas, BlobSasPermissions 
+from azure.storage.blob import generate_container_sas, generate_blob_sas, BlobSasPermissions
+from azure.storage.blob import ResourceTypes, AccountSasPermissions, generate_account_sas
 
 from datetime import datetime
 from datetime import timedelta
@@ -8,10 +9,17 @@ from datetime import timedelta
 from telemetry import log
 
 class AzureBlob():
-    def __init__(self, account_name, account_key):
-        connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net".format(account_name, account_key)
-        # Create the BlobServiceClient object which will be used to create a container client
-        self.blob_service_client = BlobServiceClient.from_connection_string(connect_str)    
+    def __init__(self, account_name, account_key=None):
+
+        if not account_key:
+            connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net".format(account_name, account_key)
+            # Create the BlobServiceClient object which will be used to create a container client
+            self.blob_service_client = BlobServiceClient.from_connection_string(connect_str)    
+        else:
+            from azure.identity import DefaultAzureCredential
+            credential = DefaultAzureCredential()
+            account_url = "https://{}.blob.core.windows.net".format(account_name),
+            self.blob_service_client = BlobServiceClient(account_url, credential)
 
     def create_container(self, container_name):
         # Create the container
@@ -58,10 +66,21 @@ class AzureBlob():
         log.info("Deleting blob container...")
         self.blob_service_client.delete_container(container_name)
     
-    @staticmethod
-    def generate_blob_sas(account_name, account_key, container_name, blob_name):
+    def generate_blob_sas(container_name, blob_name):
         log.info("Generating blob sas...")
-        blob_sas = generate_blob_sas(account_name=account_name, account_key=account_key, container_name=container_name, blob_name=blob_name,
+        blob_sas = generate_blob_sas(account_name=self.blob_service_client.account_name, account_key=self.blob_service_client.account_key, container_name=container_name, blob_name=blob_name,
         permission=BlobSasPermissions(read=True), expiry=datetime.utcnow() + timedelta(days=1))
 
-        return 'https://' + account_name +'.blob.core.windows.net/' + container_name + '/' + blob_name + '?' + blob_sas
+        return 'https://' + self.blob_service_client.account_name +'.blob.core.windows.net/' + container_name + '/' + blob_name + '?' + blob_sas    
+    
+    def generate_account_sas(resource_types=ResourceTypes(object=True), permission=AccountSasPermissions(read=True, write=True), expiry=datetime.utcnow()+timedelta(hours=1)):
+        log.info("Generating account sas...")
+        sas_token = generate_account_sas(
+            account_name=self.blob_service_client.account_name,
+            account_key=self.blob_service_client.credential.account_key,
+            resource_types=resource_types,
+            permission=permission,
+            expiry=expiry
+        )
+
+        return sas_token
