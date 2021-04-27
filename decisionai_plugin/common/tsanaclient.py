@@ -255,13 +255,25 @@ class TSANAClient(object):
 
     ################ META API ################
 
+    # To get the meta of a specific datafeed from TSANA
+    # Parameters:
+    #   parameters: a dict object which should includes
+    #       apiEndpoint: api endpoint for specific user
+    #       apiKey: api key for specific user
+    #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
+    #   datafeed_id: an UUID string
+    # Return:
+    #   the meta of the specified datafeed, or None if there is something wrong. 
+    def get_datafeed_meta(self, parameters, datafeed_id):
+        return self.get(META_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + META_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/datafeeds/' + datafeed_id)
+        
     # To get the meta of a specific metric from TSANA
     # Parameters:
     #   parameters: a dict object which should includes
     #       apiEndpoint: api endpoint for specific user
     #       apiKey: api key for specific user
     #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
-    #   metric_id: a UUID string
+    #   metric_id: an UUID string
     # Return:
     #   the meta of the specified metric, or None if there is something wrong. 
     def get_metric_meta(self, parameters, metric_id):
@@ -273,7 +285,7 @@ class TSANAClient(object):
     #       apiEndpoint: api endpoint for specific user
     #       apiKey: api key for specific user
     #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
-    #   metric_id: a UUID string
+    #   metric_id: an UUID string
     #   dimension_name: dimension name for specific metric with metric_id
     # Return:
     #   the dimension values of a specific dimension of a metric, or None if there is something wrong. 
@@ -424,7 +436,7 @@ class TSANAClient(object):
     #       apiEndpoint: api endpoint for specific user
     #       apiKey: api key for specific user
     #       groupId: groupId in TSANA, which is copied from inference request, or from the entity
-    #   metric_id: a UUID string
+    #   metric_id: an UUID string
     #   dimensions: a dict includes dimension name and value
     #   timestamps: an array of timestamps
     #   values: an array of inference result values
