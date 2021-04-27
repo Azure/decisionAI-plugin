@@ -53,7 +53,7 @@ def upload_model(config, subscription, model_id, model_dir):
 
         container_name = config.tsana_app_name
 
-        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY') if not IS_INTERNAL else None)
+        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT' if not IS_INTERNAL else 'KENSHO2_BLOB_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY') if not IS_INTERNAL else None)
         azure_blob.create_container(container_name)
 
         with open(zip_file, "rb") as data:
@@ -79,7 +79,7 @@ def download_model(config, subscription, model_id, model_dir):
 
         # download from blob
         container_name = config.tsana_app_name
-        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY') if not IS_INTERNAL else None)
+        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT' if not IS_INTERNAL else 'KENSHO2_BLOB_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY') if not IS_INTERNAL else None)
         azure_blob.create_container(container_name)
         model_name = subscription + '_' + model_id
         

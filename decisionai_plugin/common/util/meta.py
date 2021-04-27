@@ -16,8 +16,8 @@ import base64
 
 def get_azure_table():
     if IS_INTERNAL:
-        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT'))
-        azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), sas_token=azure_blob.generate_account_sas())
+        azure_blob = AzureBlob(environ.get('KENSHO2_BLOB_ACCOUNT '))
+        azure_table = AzureTable(environ.get('KENSHO2_BLOB_ACCOUNT '), sas_token=azure_blob.generate_account_sas())
     else:
         azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), account_key=environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
     return azure_table
