@@ -289,14 +289,14 @@ class PluginService():
 
     def train(self, request):
         request_body = json.loads(request.data)
-        if IS_MT:
-            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
-
         instance_id = request_body['instance']['instanceId']
         if not self.trainable:
             return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
 
         subscription = request.headers.get('apim-subscription-id', 'Official')
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = subscription
+
         result, message = self.do_verify(request_body, Context(subscription, '', ''))
         if result != STATUS_SUCCESS:
             return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + message, modelState=ModelState.Deleted.name)), 400)
@@ -329,12 +329,12 @@ class PluginService():
 
     def inference(self, request, model_id):
         request_body = json.loads(request.data)
-        if IS_MT:
-            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
-
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
         
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = subscription
+
         if self.trainable:
             meta = get_meta(self.config, subscription, model_id)
             if meta is None:
@@ -371,6 +371,10 @@ class PluginService():
 
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
+            request_body = json.loads(request.data)
+            if IS_MT:
+                request_body[INSTANCE_ID_KEY] = subscription
+                
             meta = get_meta(self.config, subscription, model_id)
             if meta == None:
                 return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_FAIL, message='Model is not found!', modelState=ModelState.Deleted.name)), 400)
@@ -403,11 +407,11 @@ class PluginService():
 
     def verify(self, request):
         request_body = json.loads(request.data)
-        if IS_MT:
-            request_body[INSTANCE_ID_KEY] = request.headers.get(INSTANCE_ID_KEY)
-
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
+        if IS_MT:
+            request_body[INSTANCE_ID_KEY] = subscription
+
         try:
             result, message = self.do_verify(request_body, Context(subscription, '', ''))
             if result != STATUS_SUCCESS:
