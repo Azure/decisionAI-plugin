@@ -33,8 +33,8 @@ if __name__ == '__main__':
         "name":"my-test","seriesSets":[{"seriesSetName":"localCSV_test2_Totalvalue","seriesSetId":"7e7954a5-7716-414b-ba13-2cc0ca644f03","metricId":"9e5bf248-f016-43ea-835e-fa20bcf67a95","dimensionFilter":{},"enrichmentConfigs":[{"enrichmentName":"AnomalyDetection","enrichmentConfigId":"d10a392f-c2c0-4204-94ee-ece960072bf1"}],"metricMeta":{"granularityName":"Daily","granularityAmount":0,"datafeedId":"b6245c1f-b4e4-4294-a707-8f30697978a2","metricName":"Totalvalue","datafeedName":"localCSV_test2","dataStartFrom":"2019-03-17T00:00:00+00:00"}}
         ],
         "instance": {
-            "instanceName": "Inconsistency Detection_Instance_1601398919427",
-            "instanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
+            "appInstanceName": "Inconsistency Detection_Instance_1601398919427",
+            "appInstanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
             "status": "Active",
             "appId": "6ea3b8a4-80b3-4fb7-adcd-25e32db6b798",
             "appName": "Inconsistency",
@@ -85,8 +85,8 @@ if __name__ == '__main__':
                             }
                         }],
                         "instance": {
-                            "instanceName": "Inconsistency Detection_Instance_1601398919427",
-                            "instanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
+                            "appInstanceName": "Inconsistency Detection_Instance_1601398919427",
+                            "appInstanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
                             "status": "Active",
                             "appId": "6ea3b8a4-80b3-4fb7-adcd-25e32db6b798",
                             "appName": "Inconsistency",
@@ -123,8 +123,8 @@ if __name__ == '__main__':
                             "appId": "1b7062a5-e624-498a-ae36-49e7ff961d7a",
                             "appName": "LinearRegression",
                             "hookIds": [],
-                            "instanceId": "23e69635-5696-437b-bcc3-1d0d9e399e0a",
-                            "instanceName": "LinearRegression_Instance_1605634501962",
+                            "appInstanceId": "23e69635-5696-437b-bcc3-1d0d9e399e0a",
+                            "appInstanceName": "LinearRegression_Instance_1605634501962",
                             "params": {
                                 "metricDeficiency": 0,
                                 "tracebackWindow": 20
@@ -237,8 +237,8 @@ if __name__ == '__main__':
             "appName": "AiDice_AKS",
             "appType": "External",
             "hookIds": ["f07e6f43-248b-4377-a26e-6adcfd01f97a"],
-            "instanceId": "95ef1b2e-676f-4065-9dd8-667ddbca7f1d",
-            "instanceName": "AiDice_AKS_Instance_1607724790777",
+            "appInstanceId": "95ef1b2e-676f-4065-9dd8-667ddbca7f1d",
+            "appInstanceName": "AiDice_AKS_Instance_1607724790777",
             "params": {
                 "Blackout": "",
                 "bmsSize": 50,
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     '''
 
     #data_body = json.loads(data_point_request)
-    #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['instance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
+    #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['appInstance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
     
     request_json_3 = '''
         {
@@ -367,8 +367,8 @@ if __name__ == '__main__':
                 "appName": "MAGAplugin",
                 "appType": "External",
                 "hookIds": [],
-                "instanceId": "b24b4d3a-1ec8-4578-9400-45cc53c928f5",
-                "instanceName": "MagaPluginTest_Instance_1608726154339",
+                "appInstanceId": "b24b4d3a-1ec8-4578-9400-45cc53c928f5",
+                "appInstanceName": "MagaPluginTest_Instance_1608726154339",
                 "params": {
                     "alertRatio": 0.8,
                     "alertWindow": 5,

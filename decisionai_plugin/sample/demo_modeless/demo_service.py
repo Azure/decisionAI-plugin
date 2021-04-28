@@ -21,7 +21,7 @@ class DemoService(PluginService):
     def do_inference(self, model_dir, parameters, context):
         log.info('Start to inference {}'.format('Demo'))
         try:
-            amplifier = parameters['instance']['params']['amplifier']
+            amplifier = parameters['appInstance']['params']['amplifier']
             end_time = str_to_dt(parameters['endTime'])
             if 'startTime' in parameters:
                 start_time = str_to_dt(parameters['startTime'])
