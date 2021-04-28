@@ -68,7 +68,7 @@ class AzureBlob():
     
     def generate_blob_sas(self, container_name, blob_name):
         log.info("Generating blob sas...")
-        blob_sas = generate_blob_sas(account_name=self.blob_service_client.account_name, account_key=self.blob_service_client.account_key, container_name=container_name, blob_name=blob_name,
+        blob_sas = generate_blob_sas(account_name=self.blob_service_client.account_name, account_key=self.blob_service_client.credential.account_key, container_name=container_name, blob_name=blob_name,
         permission=BlobSasPermissions(read=True), expiry=datetime.utcnow() + timedelta(days=1))
 
         return 'https://' + self.blob_service_client.account_name +'.blob.core.windows.net/' + container_name + '/' + blob_name + '?' + blob_sas    
