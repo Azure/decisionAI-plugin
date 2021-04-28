@@ -10,15 +10,15 @@ from telemetry import log
 
 class AzureBlob():
     def __init__(self, account_name, account_key=None):
-
-        if not account_key:
+        
+        if account_key:
             connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net".format(account_name, account_key)
             # Create the BlobServiceClient object which will be used to create a container client
             self.blob_service_client = BlobServiceClient.from_connection_string(connect_str)    
         else:
             from azure.identity import DefaultAzureCredential
             credential = DefaultAzureCredential()
-            account_url = "https://{}.blob.core.windows.net".format(account_name),
+            account_url = "https://{}.blob.core.windows.net".format(account_name)
             self.blob_service_client = BlobServiceClient(account_url, credential)
 
     def create_container(self, container_name):
