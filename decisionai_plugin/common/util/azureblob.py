@@ -66,14 +66,14 @@ class AzureBlob():
         log.info("Deleting blob container...")
         self.blob_service_client.delete_container(container_name)
     
-    def generate_blob_sas(container_name, blob_name):
+    def generate_blob_sas(self, container_name, blob_name):
         log.info("Generating blob sas...")
         blob_sas = generate_blob_sas(account_name=self.blob_service_client.account_name, account_key=self.blob_service_client.account_key, container_name=container_name, blob_name=blob_name,
         permission=BlobSasPermissions(read=True), expiry=datetime.utcnow() + timedelta(days=1))
 
         return 'https://' + self.blob_service_client.account_name +'.blob.core.windows.net/' + container_name + '/' + blob_name + '?' + blob_sas    
     
-    def generate_account_sas(resource_types=ResourceTypes(object=True), permission=AccountSasPermissions(read=True, write=True), expiry=datetime.utcnow()+timedelta(hours=1)):
+    def generate_account_sas(self, resource_types=ResourceTypes(object=True), permission=AccountSasPermissions(read=True, write=True), expiry=datetime.utcnow()+timedelta(hours=1)):
         log.info("Generating account sas...")
         sas_token = generate_account_sas(
             account_name=self.blob_service_client.account_name,
