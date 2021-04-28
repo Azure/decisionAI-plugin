@@ -44,5 +44,5 @@ INSTANCE_ID_PLACEHOLDER = '__INSTANCE_ID__'
 STORAGE_GW_MT_ENDPOINT_PATTERN = "http://ma-gw-__INSTANCE_ID__.__INSTANCE_ID__.svc.cluster.local:8300"
 STORAGE_GW_ST_ENDPOINT_PATTERN = "http://storage-gw-server.kensho2-infra.svc.cluster.local:8300"
 
-IS_MT = True if os.environ.get('MULTI_TENANT', 'false') == 'true' else False
+IS_MT = True if os.environ.get('IS_MULTI_TENANCY', 'false') == 'true' else False
 IS_INTERNAL = True if os.environ.get('MA_INTERNAL', 'false') == 'true' else False
