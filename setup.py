@@ -49,6 +49,7 @@ setup(
 		'apscheduler',
         'numpy==1.17.3',
         'pandas==1.0.0',
+        'azure-identity',
     ],
 	include_package_data=True
 )
