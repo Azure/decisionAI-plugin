@@ -6,7 +6,7 @@ from .azureblob import AzureBlob
 from .azuretable import AzureTable
 from .constant import STATUS_SUCCESS, STATUS_FAIL
 from .constant import ModelState
-from .constant import IS_INTERNAL, IS_MT
+from .constant import AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCOUNT_KEY
 from telemetry import log
 
 from .monitor import thumbprint
@@ -15,12 +15,7 @@ import zlib
 import base64
 
 def get_azure_table():
-    if IS_INTERNAL:
-        azure_blob = AzureBlob(environ.get('KENSHO2_BLOB_ACCOUNT '))
-        azure_table = AzureTable(environ.get('KENSHO2_BLOB_ACCOUNT '), sas_token=azure_blob.generate_account_sas())
-    else:
-        azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), account_key=environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
-    return azure_table
+    return AzureTable(AZURE_STORAGE_ACCOUNT, account_key=AZURE_STORAGE_ACCOUNT_KEY)
 
 def insert_meta(config, subscription, model_id, meta):
     azure_table = get_azure_table()
