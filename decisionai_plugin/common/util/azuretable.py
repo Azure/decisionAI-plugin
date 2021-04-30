@@ -7,7 +7,8 @@ class AzureTable():
         if account_key:
             self.table_service = TableService(account_name=account_name, account_key=account_key)
         else:
-            self.table_service = TableService(account_name=account_name, sas_token=DefaultAzureCredential().get_token())
+            scopes = ["https://storage.azure.com/.default"]
+            self.table_service = TableService(account_name=account_name, sas_token=DefaultAzureCredential().get_token(scopes=scopes))
 
     def create_table(self, table_name):
         return self.table_service.create_table(table_name)
