@@ -48,4 +48,4 @@ STORAGE_GW_MT_ENDPOINT_PATTERN = "http://gw-__INSTANCE_ID__.metricsadvisor-mt.sv
 STORAGE_GW_ST_ENDPOINT_PATTERN = "http://storage-gw-server.kensho2-infra.svc.cluster.local:8300"
 
 AZURE_STORAGE_ACCOUNT = os.environ.get('KENSHO2_BLOB_ACCOUNT' if IS_INTERNAL else 'AZURE_STORAGE_ACCOUNT')
-AZURE_STORAGE_ACCOUNT_KEY = None if IS_INTERNAL else os.environ.get('AZURE_STORAGE_ACCOUNT_KEY')
+AZURE_STORAGE_ACCOUNT_KEY = (None if IS_MT else os.environ.get('KENSHO2_BLOB_KEY')) if IS_INTERNAL else os.environ.get('AZURE_STORAGE_ACCOUNT_KEY')
