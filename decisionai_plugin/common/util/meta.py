@@ -6,7 +6,7 @@ from .azureblob import AzureBlob
 from .azuretable import AzureTable
 from .constant import STATUS_SUCCESS, STATUS_FAIL
 from .constant import ModelState
-
+from .constant import AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_TABLE_KEY
 from telemetry import log
 
 from .monitor import thumbprint
@@ -14,19 +14,22 @@ from .monitor import thumbprint
 import zlib
 import base64
 
+def get_azure_table():
+    return AzureTable(AZURE_STORAGE_ACCOUNT, account_key=AZURE_STORAGE_TABLE_KEY)
+
 def insert_meta(config, subscription, model_id, meta):
-    azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+    azure_table = get_azure_table()
     if not azure_table.exists_table(config.az_tsana_meta_table):
         azure_table.create_table(config.az_tsana_meta_table)
     azure_table.insert_or_replace_entity(config.az_tsana_meta_table, subscription, 
             model_id, 
             group_id=meta['groupId'],
-            app_id=meta['instance']['appId'],
-            app_name=meta['instance']['appName'],
+            app_id=meta['appInstance']['appId'],
+            app_name=meta['appInstance']['appName'],
             series_set=base64.b64encode(zlib.compress(json.dumps(meta['seriesSets']).encode('utf-8'))).decode("ascii"),
-            inst_name=meta['instance']['instanceName'],
-            inst_id=meta['instance']['instanceId'],
-            para=json.dumps(meta['instance']['params']),
+            inst_name=meta['appInstance']['appInstanceName'],
+            inst_id=meta['appInstance']['appInstanceId'],
+            para=json.dumps(meta['appInstance']['params']),
             state=ModelState.Pending.name,
             context='',
             last_error='',
@@ -42,7 +45,7 @@ def insert_meta(config, subscription, model_id, meta):
 #   meta: a Dict object which includes all the column of an model entity
 def get_meta(config, subscription, model_id):
     try: 
-        azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+        azure_table = get_azure_table()
         if not azure_table.exists_table(config.az_tsana_meta_table):
             raise Exception('Meta table not exists')
 
@@ -63,7 +66,7 @@ def get_meta(config, subscription, model_id):
 #   result: STATUS_SUCCESS / STATUS_FAIL
 #   message: description for the result 
 def update_state(config, subscription, model_id, state:ModelState=None, context:str=None, last_error:str=None):
-    azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+    azure_table = get_azure_table()
     meta = get_meta(config, subscription, model_id)
     if meta == None or meta['state'] == ModelState.Deleted.name:
         return STATUS_FAIL, 'Model is not found!'
@@ -89,7 +92,7 @@ def update_state(config, subscription, model_id, state:ModelState=None, context:
 
 def get_model_list(config, subscription):
     models = []
-    azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+    azure_table = get_azure_table()
     if not azure_table.exists_table(config.az_tsana_meta_table):
         return models
         
@@ -102,8 +105,8 @@ def get_model_list(config, subscription):
                 groupId=entity['group_id'],
                 appId=entity['app_id'],
                 appName=entity['app_name'],
-                instanceName=entity['inst_name'],
-                instanceId=entity['inst_id'],
+                appInstanceName=entity['inst_name'],
+                appInstanceId=entity['inst_id'],
                 state=entity['state'] if 'state' in entity else '',
                 ctime=entity['ctime'] if 'ctime' in entity else '',
                 mtime=entity['mtime'] if 'mtime' in entity else '',
@@ -120,7 +123,7 @@ def get_model_list(config, subscription):
 #   entity: a entity with a correct state
 def clear_state_when_necessary(config, subscription, model_id, entity):
     if 'state' in entity and entity['state'] == ModelState.Training.name:
-        azure_table = AzureTable(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+        azure_table = get_azure_table()
         if not azure_table.exists_table(config.az_tsana_moniter_table):
             return entity
         
