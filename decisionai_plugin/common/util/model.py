@@ -18,6 +18,7 @@ from .azuretable import AzureTable
 from .timeutil import get_time_offset, str_to_dt, dt_to_str
 from .constant import TIMESTAMP, VALUE
 from .constant import STATUS_SUCCESS, STATUS_FAIL
+from .constant import AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCOUNT_KEY
 
 # Copy the model file to local prd directory, zip and upload to AzureBlob
 # The training output and prd directory is calculated by config with subscription/model_id
@@ -51,7 +52,8 @@ def upload_model(config, subscription, model_id, model_dir):
             zf.close()
 
         container_name = config.tsana_app_name
-        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+
+        azure_blob = AzureBlob(AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCOUNT_KEY)
         azure_blob.create_container(container_name)
 
         with open(zip_file, "rb") as data:
@@ -77,7 +79,7 @@ def download_model(config, subscription, model_id, model_dir):
 
         # download from blob
         container_name = config.tsana_app_name
-        azure_blob = AzureBlob(environ.get('AZURE_STORAGE_ACCOUNT'), environ.get('AZURE_STORAGE_ACCOUNT_KEY'))
+        azure_blob = AzureBlob(AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_ACCOUNT_KEY)
         azure_blob.create_container(container_name)
         model_name = subscription + '_' + model_id
         
