@@ -34,7 +34,7 @@ if __name__ == '__main__':
         ],
         "instance": {
             "appInstanceName": "Inconsistency Detection_Instance_1601398919427",
-            "appInstanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
+            "instanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
             "status": "Active",
             "appId": "6ea3b8a4-80b3-4fb7-adcd-25e32db6b798",
             "appName": "Inconsistency",
@@ -86,7 +86,7 @@ if __name__ == '__main__':
                         }],
                         "instance": {
                             "appInstanceName": "Inconsistency Detection_Instance_1601398919427",
-                            "appInstanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
+                            "instanceId": "88e39eee-02c3-480e-927a-4f32dd16e570",
                             "status": "Active",
                             "appId": "6ea3b8a4-80b3-4fb7-adcd-25e32db6b798",
                             "appName": "Inconsistency",
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                             "appId": "1b7062a5-e624-498a-ae36-49e7ff961d7a",
                             "appName": "LinearRegression",
                             "hookIds": [],
-                            "appInstanceId": "23e69635-5696-437b-bcc3-1d0d9e399e0a",
+                            "instanceId": "23e69635-5696-437b-bcc3-1d0d9e399e0a",
                             "appInstanceName": "LinearRegression_Instance_1605634501962",
                             "params": {
                                 "metricDeficiency": 0,
@@ -237,7 +237,7 @@ if __name__ == '__main__':
             "appName": "AiDice_AKS",
             "appType": "External",
             "hookIds": ["f07e6f43-248b-4377-a26e-6adcfd01f97a"],
-            "appInstanceId": "95ef1b2e-676f-4065-9dd8-667ddbca7f1d",
+            "instanceId": "95ef1b2e-676f-4065-9dd8-667ddbca7f1d",
             "appInstanceName": "AiDice_AKS_Instance_1607724790777",
             "params": {
                 "Blackout": "",
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     '''
 
     #data_body = json.loads(data_point_request)
-    #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['appInstance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
+    #status, message = dummy.tsanaclient.save_data_points(request_body, request_body['instance']['target']['metrics'][0]['metricId'], data_body['dimensions'], data_body['timestamps'], data_body['values'])
     
     request_json_3 = '''
         {
@@ -367,7 +367,7 @@ if __name__ == '__main__':
                 "appName": "MAGAplugin",
                 "appType": "External",
                 "hookIds": [],
-                "appInstanceId": "b24b4d3a-1ec8-4578-9400-45cc53c928f5",
+                "instanceId": "b24b4d3a-1ec8-4578-9400-45cc53c928f5",
                 "appInstanceName": "MagaPluginTest_Instance_1608726154339",
                 "params": {
                     "alertRatio": 0.8,

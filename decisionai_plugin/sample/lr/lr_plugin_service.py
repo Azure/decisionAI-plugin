@@ -32,7 +32,7 @@ class LrPluginService(PluginService):
             metric_meta = series_set['metricMeta']
             gran = (metric_meta['granularityName'], metric_meta['granularityAmount'])
             data_end_time = get_time_offset(end_time, gran, + 1)
-            trace_back_window = parameters['appInstance']['params']['tracebackWindow']
+            trace_back_window = parameters['instance']['params']['tracebackWindow']
             data_start_time = get_time_offset(start_time, gran, -trace_back_window)
             if data_end_time > max_end_time:
                 max_end_time = data_end_time
@@ -72,7 +72,7 @@ class LrPluginService(PluginService):
         results = []
 
         start_time, end_time, gran = self.get_inference_time_range(parameters)
-        traceback_window = parameters['appInstance']['params']['tracebackWindow']
+        traceback_window = parameters['instance']['params']['tracebackWindow']
 
         for factor in series:
             timestamps = []
@@ -99,9 +99,9 @@ class LrPluginService(PluginService):
                 r2scores.append(r2_score(y, y_new))
 
             dimension = dict(seriesId=factor.series_id)
-            metric_value = next(m for m in parameters['appInstance']['target']['metrics'] if m['metricName'] == 'value')
-            metric_mse = next(m for m in parameters['appInstance']['target']['metrics'] if m['metricName'] == 'mse')
-            metric_r2score = next(m for m in parameters['appInstance']['target']['metrics'] if m['metricName'] == 'r2score')
+            metric_value = next(m for m in parameters['instance']['target']['metrics'] if m['metricName'] == 'value')
+            metric_mse = next(m for m in parameters['instance']['target']['metrics'] if m['metricName'] == 'mse')
+            metric_r2score = next(m for m in parameters['instance']['target']['metrics'] if m['metricName'] == 'r2score')
 
             results.append(dict(metricId=metric_value['metricId'], dimension=dimension, timestamps=timestamps, values=values))
             results.append(dict(metricId=metric_mse['metricId'], dimension=dimension, timestamps=timestamps, values=mses))

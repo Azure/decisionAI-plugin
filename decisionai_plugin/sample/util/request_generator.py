@@ -10,9 +10,9 @@ def generate_request(plugin_service, api_endpoint, api_endpoint_v2, api_key, gro
     app_exist = False
     request_sample['seriesSets'] = group_detail['seriesSets']
     for app in group_detail['appInstances']:
-        if app['appInstanceId'] == instance_id:
+        if app['instanceId'] == instance_id:
             app_exist = True
-            request_sample['appInstance'] = app
+            request_sample['instance'] = app
             break
     
     if not app_exist:

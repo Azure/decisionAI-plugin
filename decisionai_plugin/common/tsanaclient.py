@@ -226,8 +226,8 @@ class TSANAClient(object):
 
                         sub_multi_series_data.append(Series(factor['name'], factor['seriesId'], factor['tags'], factor['columns'], factor['values']))
                         total_point_num += len(factor['values'])
-                        log.count("get_data_series_num", 1, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['appInstance']['appInstanceId'], instance_name=parameters['appInstance']['appInstanceName'].replace(' ', '_'))
-                        log.count("get_data_point_num", len(factor['values']), endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['appInstance']['appInstanceId'], instance_name=parameters['appInstance']['appInstanceName'].replace(' ', '_'))
+                        log.count("get_data_series_num", 1, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['appInstanceName'].replace(' ', '_'))
+                        log.count("get_data_point_num", len(factor['values']), endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['appInstanceName'].replace(' ', '_'))
                     
                     multi_series_data.extend(sub_multi_series_data)
                     count += len(sub_multi_series_data)
@@ -500,7 +500,7 @@ class TSANAClient(object):
                 'message': message
             }
 
-            self.put(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['appInstance']['appInstanceId'] + '/modelKey', body)
+            self.put(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/modelKey', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -524,7 +524,7 @@ class TSANAClient(object):
             for batch_index in range(math.ceil(len(result) / batch_size)):
                 body = {
                 'groupId': parameters['groupId'], 
-                'appInstanceId': parameters['appInstance']['appInstanceId'], 
+                'instanceId': parameters['instance']['instanceId'], 
                 'results': []
                 }
                 batch_start = batch_index * batch_size
@@ -532,12 +532,12 @@ class TSANAClient(object):
                     item = result[batch_start + step]
                     item['timestamp'] = dt_to_str(str_to_dt(item['timestamp']))
                     body['results'].append({
-                        'params': parameters['appInstance']['params'],
+                        'params': parameters['instance']['params'],
                         'timestamp': item['timestamp'],
                         'result': item['value'],
                         'status': item['status']
                     })
-                self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['appInstance']['appInstanceId'] + '/saveResult', body)
+                self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/saveResult', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             return STATUS_FAIL, str(e)
@@ -559,8 +559,8 @@ class TSANAClient(object):
             context = {}
             context['groupId'] = parameters['groupId']
             context['groupName'] = parameters['groupName']
-            context['appInstanceId'] = parameters['appInstance']['appInstanceId']
-            context['appInstanceName'] = parameters['appInstance']['appInstanceName']
+            context['instanceId'] = parameters['instance']['instanceId']
+            context['appInstanceName'] = parameters['instance']['appInstanceName']
             context['startTime'] = parameters['startTime']
             context['endTime'] = parameters['endTime']
 
@@ -572,7 +572,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['appInstance']['appInstanceId'] + '/ops', body)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             log.warning(f"Save training status failed. taskId: {task_id}, error: {str(e)}")
@@ -598,8 +598,8 @@ class TSANAClient(object):
             context = {}
             context['groupId'] = parameters['groupId']
             context['groupName'] = parameters['groupName']
-            context['appInstanceId'] = parameters['appInstance']['appInstanceId']
-            context['appInstanceName'] = parameters['appInstance']['appInstanceName']
+            context['instanceId'] = parameters['instance']['instanceId']
+            context['appInstanceName'] = parameters['instance']['appInstanceName']
             context['startTime'] = parameters['startTime']
             context['endTime'] = parameters['endTime']
 
@@ -611,7 +611,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['appInstance']['appInstanceId'] + '/ops', body)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             log.warning(f"Save inference status failed. taskId: {task_id}, error: {str(e)}")
@@ -633,7 +633,7 @@ class TSANAClient(object):
             ret = self.get(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
                                 + parameters['groupId'] 
                                 + '/appInstances/' 
-                                + parameters['appInstance']['appInstanceId'] 
+                                + parameters['instance']['instanceId'] 
                                 + '/history?startTime=' 
                                 + parameters['startTime']
                                 + '&endTime=' 
