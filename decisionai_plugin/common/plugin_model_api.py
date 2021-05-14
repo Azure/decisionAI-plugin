@@ -70,11 +70,11 @@ class PluginModelAPI(Resource):  # The API class that handles a single user
 
     @try_except
     def get(self, model_id):
-        return self.__plugin_service.state(request, model_id)
+        pass
 
     @try_except
     def post(self, model_id):
-        pass
+        return self.__plugin_service.state(request, model_id)
 
     @try_except
     def put(self, model_id):
