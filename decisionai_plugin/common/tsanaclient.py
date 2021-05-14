@@ -572,7 +572,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/instances/' + parameters['instance']['instanceId'] + '/ops', body)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             log.warning(f"Save training status failed. taskId: {task_id}, error: {str(e)}")
@@ -611,7 +611,7 @@ class TSANAClient(object):
                 'lastError': last_error if last_error is not None else ''
                 }
                
-            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/instances/' + parameters['instance']['instanceId'] + '/ops', body)
+            self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY] if IS_MT else None, parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
             return STATUS_SUCCESS, ''
         except Exception as e:
             log.warning(f"Save inference status failed. taskId: {task_id}, error: {str(e)}")
