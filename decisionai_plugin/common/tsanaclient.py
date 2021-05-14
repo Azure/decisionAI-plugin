@@ -47,6 +47,7 @@ class TSANAClient(object):
             "x-user": user,
             "X-Base-Address": api_endpoint,
             "Instance-Id": instance_id,
+            "X-Action-Source": "Plugin",
             "Content-Type": "application/json"
         }
 
@@ -82,6 +83,7 @@ class TSANAClient(object):
             "x-user": user,
             "X-Base-Address": api_endpoint,
             "Instance-Id": instance_id,
+            "X-Action-Source": "Plugin",
             "Content-Type": "application/json"
         }
 
@@ -117,6 +119,7 @@ class TSANAClient(object):
             "x-user": user,
             "X-Base-Address": api_endpoint,
             "Instance-Id": instance_id,
+            "X-Action-Source": "Plugin",
             "Content-Type": "application/json"
         }
 
