@@ -156,7 +156,7 @@ class PluginService():
     def do_inference(self, model_dir, parameters, series, context:Context):
         return STATUS_SUCCESS, None, ''
 
-    def do_delete(self, subscription, model_id):
+    def do_delete(self, parameters, model_id):
         return STATUS_SUCCESS, ''
 
     def get_data_time_range(self, parameters, is_training=False):
@@ -391,10 +391,13 @@ class PluginService():
 
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
-            result, message = self.do_delete(subscription, model_id)
+            request_body = json.loads(request.data)
+            request_body[INSTANCE_ID_KEY] = subscription
+            instance_id = request_body['instance']['instanceId']
+            result, message = self.do_delete(request_body, model_id)
             if result == STATUS_SUCCESS:
                 update_state(self.config, subscription, model_id, ModelState.Deleted)
-                return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
+                return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId='', result=STATUS_SUCCESS, message='Model {} has been deleted'.format(model_id), modelState=ModelState.Deleted.name)), 200)
             else:
                 raise Exception(message)
         except Exception as e:
