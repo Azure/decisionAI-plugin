@@ -14,7 +14,6 @@ import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import jsonify, make_response
 
-from .tsanaclient import IS_MT
 from .tsanaclient import TSANAClient
 from .util.constant import InferenceState
 from .util.constant import ModelState
@@ -294,8 +293,7 @@ class PluginService():
             return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Model is not trainable', modelState=ModelState.Ready.name)), 200)
 
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        if IS_MT:
-            request_body[INSTANCE_ID_KEY] = subscription
+        request_body[INSTANCE_ID_KEY] = subscription
 
         result, message = self.do_verify(request_body, Context(subscription, '', ''))
         if result != STATUS_SUCCESS:
@@ -332,8 +330,7 @@ class PluginService():
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
         
-        if IS_MT:
-            request_body[INSTANCE_ID_KEY] = subscription
+        request_body[INSTANCE_ID_KEY] = subscription
 
         if self.trainable:
             meta = get_meta(self.config, subscription, model_id)
@@ -372,8 +369,7 @@ class PluginService():
         try:
             subscription = request.headers.get('apim-subscription-id', 'Official')
             request_body = json.loads(request.data)
-            if IS_MT:
-                request_body[INSTANCE_ID_KEY] = subscription
+            request_body[INSTANCE_ID_KEY] = subscription
                 
             meta = get_meta(self.config, subscription, model_id)
             if meta == None:
@@ -409,8 +405,7 @@ class PluginService():
         request_body = json.loads(request.data)
         instance_id = request_body['instance']['instanceId']
         subscription = request.headers.get('apim-subscription-id', 'Official')
-        if IS_MT:
-            request_body[INSTANCE_ID_KEY] = subscription
+        request_body[INSTANCE_ID_KEY] = subscription
 
         try:
             result, message = self.do_verify(request_body, Context(subscription, '', ''))
