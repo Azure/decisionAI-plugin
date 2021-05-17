@@ -633,7 +633,7 @@ class TSANAClient(object):
         try: 
             ret = self.get(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY], parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' 
                                 + parameters['groupId'] 
-                                + '/instances/' 
+                                + '/appInstances/' 
                                 + parameters['instance']['instanceId'] 
                                 + '/history?startTime=' 
                                 + parameters['startTime']
