@@ -264,7 +264,7 @@ class PluginService():
             last_error = str(e) + '\n' + traceback.format_exc()
         finally:
             update_state(self.config, subscription, model_id, model_state, None, last_error)
-            self.tsanaclient.save_training_status(task_id, parameters, model_state.name)
+            self.tsanaclient.save_training_status(task_id, parameters, model_state.name, last_error)
             self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
             log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
 
