@@ -322,7 +322,7 @@ class PluginService():
             error_message = str(e)
             if meta is not None: 
                 update_state(self.config, subscription, model_id, ModelState.Failed, None, error_message)
-            log.error("Create training task failed! subscription = %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, error_message + '\n' + traceback.format_exc()))
+            log.error("Create training task failed! subscription = %s, model_id = %s, task_id = %s, last_error = %s" % (subscription, model_id, task_id, error_message + '\n' + traceback.format_exc()))
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_FAIL, message='Fail to create new task ' + error_message, modelState=ModelState.Failed.name)), 400)
 
     def inference(self, request, model_id):
