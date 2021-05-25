@@ -183,13 +183,12 @@ class PluginService():
 
             if result == STATUS_SUCCESS:
                 if callback is not None:
-                    callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, message)
+                    callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, None)
             else:
                 raise Exception(message)
         except Exception as e:
-            error_message = str(e) + '\n' + traceback.format_exc()
             if callback is not None:
-                callback(subscription, model_id, task_id, None, parameters, ModelState.Failed, error_message)
+                callback(subscription, model_id, task_id, None, parameters, ModelState.Failed, str(e))
 
             result = STATUS_FAIL
         finally:
@@ -229,15 +228,14 @@ class PluginService():
 
             self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Running.name)
             result, values, message = self.do_inference(model_dir, parameters, series, Context(subscription, model_id, task_id))
-
-            if callback is not None:
-                callback(subscription, model_id, task_id, parameters, result, values, message)
         except Exception as e:
-            error_message = str(e) + '\n' + traceback.format_exc()
-            if callback is not None:
-                callback(subscription, model_id, task_id, parameters, STATUS_FAIL, None, error_message)
+            result = STATUS_FAIL
+            values = None
+            message = str(e)
         finally:
             shutil.rmtree(model_dir, ignore_errors=True)
+            if callback is not None:
+                callback(subscription, model_id, task_id, parameters, result, values, message)
 
         total_time = (time.time() - start)
         log.duration("inference_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
@@ -257,15 +255,15 @@ class PluginService():
                 if result != STATUS_SUCCESS:
                     model_state = ModelState.Failed
                     last_error = 'Model storage failed! ' + message
-
         except Exception as e:
             model_state = ModelState.Failed
-            last_error = str(e) + '\n' + traceback.format_exc()
+            last_error = str(e)
         finally:
             update_state(self.config, subscription, model_id, model_state, None, last_error)
             self.tsanaclient.save_training_status(task_id, parameters, model_state.name, last_error)
             self.tsanaclient.save_training_result(parameters, model_id, model_state.name, last_error)
-            log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, last_error if last_error is not None else ''))
+            error_message = last_error + '\n' + traceback.format_exc() if model_state != ModelState.Ready else None
+            log.info("Training callback by %s, model_id = %s, task_id = %s, state = %s, last_error = %s" % (subscription, model_id, task_id, model_state, error_message if error_message is not None else ''))
 
     def inference_callback(self, subscription, model_id, task_id, parameters, result, values, last_error=None):
         try:
@@ -275,16 +273,16 @@ class PluginService():
                                                                             value['fields'] if 'fields' in value else None, value['fieldValues'] if 'fieldValues' in value else None)
                     if result != STATUS_SUCCESS:
                         break
-
         except Exception as e:
             result = STATUS_FAIL
-            last_error = str(e) + '\n' + traceback.format_exc()
+            last_error = str(e)
         finally:
             if result == STATUS_SUCCESS:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
             else:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Failed.name, last_error)
-            log.info ("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, last_error if last_error is not None else ''))
+            error_message = last_error + '\n' + traceback.format_exc() if result != STATUS_SUCCESS else None
+            log.info("Inference callback by %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, error_message if error_message is not None else ''))
 
     def train(self, request):
         request_body = json.loads(request.data)
@@ -317,12 +315,14 @@ class PluginService():
             insert_meta(self.config, subscription, model_id, request_body)
             meta = get_meta(self.config, subscription, model_id)
             asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_id, task_id, request_body, self.train_callback))
+            log.count("thread_pool_queue_size", executor._work_queue.qsize())
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
         except Exception as e:
             meta = get_meta(self.config, subscription, model_id)
-            error_message = str(e) + '\n' + traceback.format_exc()
+            error_message = str(e)
             if meta is not None: 
                 update_state(self.config, subscription, model_id, ModelState.Failed, None, error_message)
+            log.error("Create training task failed! subscription = %s, model_id = %s, task_id = %s, result = %s, last_error = %s" % (subscription, model_id, task_id, result, error_message + '\n' + traceback.format_exc()))
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_FAIL, message='Fail to create new task ' + error_message, modelState=ModelState.Failed.name)), 400)
 
     def inference(self, request, model_id):
@@ -360,6 +360,7 @@ class PluginService():
         log.info('Create inference task')
         task_id = str(uuid.uuid1())
         asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_id, task_id, request_body, self.inference_callback))
+        log.count("thread_pool_queue_size", executor._work_queue.qsize())
         return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Inference task created', modelState=ModelState.Ready.name)), 201)
 
     def state(self, request, model_id):
@@ -378,7 +379,8 @@ class PluginService():
             meta = clear_state_when_necessary(self.config, subscription, model_id, meta)
             return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_SUCCESS, message=meta['last_error'] if 'last_error' in meta else '', modelState=meta['state'])), 200)
         except Exception as e:
-            error_message = str(e) + '\n' + traceback.format_exc()
+            error_message = str(e)
+            log.error("Get model state failed! subscription = %s, model_id = %s, last_error = %s" % (subscription, model_id, error_message + '\n' + traceback.format_exc()))
             return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_FAIL, message=error_message, modelState=ModelState.Failed.name)), 400)
         
     def list_models(self, request):
@@ -401,7 +403,8 @@ class PluginService():
             else:
                 raise Exception(message)
         except Exception as e:
-            error_message = str(e) + '\n' + traceback.format_exc()
+            error_message = str(e)
+            log.error("Delete model failed! subscription = %s, model_id = %s, last_error = %s" % (subscription, model_id, error_message + '\n' + traceback.format_exc()))
             return make_response(jsonify(dict(instanceId='', modelId=model_id, taskId='', result=STATUS_FAIL, message=error_message, modelState=ModelState.Failed.name)), 400)
 
     def verify(self, request):
@@ -417,5 +420,6 @@ class PluginService():
             else:
                 return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_SUCCESS, message='Verify successfully! ' + message, modelState=ModelState.Deleted.name)), 200)
         except Exception as e:
-            error_message = str(e) + '\n' + traceback.format_exc()
+            error_message = str(e)
+            log.error("Verify parameters failed! subscription = %s, instance_id = %s, last_error = %s" % (subscription, instance_id, error_message + '\n' + traceback.format_exc()))
             return make_response(jsonify(dict(instanceId=instance_id, modelId='', taskId='', result=STATUS_FAIL, message='Verify failed! ' + error_message, modelState=ModelState.Deleted.name)), 400)
