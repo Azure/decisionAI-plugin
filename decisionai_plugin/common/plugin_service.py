@@ -315,7 +315,7 @@ class PluginService():
             insert_meta(self.config, subscription, model_id, request_body)
             meta = get_meta(self.config, subscription, model_id)
             asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_id, task_id, request_body, self.train_callback))
-            log.count("thread_pool_queue_size", executor._work_queue.qsize())
+            log.gauge("thread_pool_queue_size", executor._work_queue.qsize())
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
         except Exception as e:
             meta = get_meta(self.config, subscription, model_id)
@@ -360,7 +360,7 @@ class PluginService():
         log.info('Create inference task')
         task_id = str(uuid.uuid1())
         asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_id, task_id, request_body, self.inference_callback))
-        log.count("thread_pool_queue_size", executor._work_queue.qsize())
+        log.gauge("thread_pool_queue_size", executor._work_queue.qsize())
         return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Inference task created', modelState=ModelState.Ready.name)), 201)
 
     def state(self, request, model_id):
