@@ -232,6 +232,7 @@ class PluginService():
             result = STATUS_FAIL
             values = None
             message = str(e)
+            raise e
         finally:
             shutil.rmtree(model_dir, ignore_errors=True)
             if callback is not None:
@@ -258,6 +259,7 @@ class PluginService():
         except Exception as e:
             model_state = ModelState.Failed
             last_error = str(e)
+            raise e
         finally:
             update_state(self.config, subscription, model_id, model_state, None, last_error)
             self.tsanaclient.save_training_status(task_id, parameters, model_state.name, last_error)
@@ -276,6 +278,7 @@ class PluginService():
         except Exception as e:
             result = STATUS_FAIL
             last_error = str(e)
+            raise e
         finally:
             if result == STATUS_SUCCESS:
                 self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Ready.name)
