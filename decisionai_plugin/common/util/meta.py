@@ -6,7 +6,7 @@ from .azureblob import AzureBlob
 from .azuretable import AzureTable
 from .constant import STATUS_SUCCESS, STATUS_FAIL
 from .constant import ModelState
-from .constant import AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_TABLE_KEY
+from .constant import AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_TABLE_KEY, AZURE_STORAGE_ACCOUNT_DOMAIN
 from telemetry import log
 
 from .monitor import thumbprint
@@ -15,7 +15,7 @@ import zlib
 import base64
 
 def get_azure_table():
-    return AzureTable(AZURE_STORAGE_ACCOUNT, account_key=AZURE_STORAGE_TABLE_KEY)
+    return AzureTable(AZURE_STORAGE_ACCOUNT, account_key=AZURE_STORAGE_TABLE_KEY, account_domain=AZURE_STORAGE_ACCOUNT_DOMAIN)
 
 def insert_meta(config, subscription, model_id, meta):
     azure_table = get_azure_table()

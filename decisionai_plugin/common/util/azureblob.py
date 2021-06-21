@@ -10,9 +10,9 @@ from datetime import timedelta
 from telemetry import log
 
 class AzureBlob():
-    def __init__(self, account_name, account_key=None):
+    def __init__(self, account_name, account_key=None, account_domain="core.windows.net"):
         if account_key:
-            connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net".format(account_name, account_key)
+            connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix={}".format(account_name, account_key, account_domain)
             # Create the BlobServiceClient object which will be used to create a container client
             self.blob_service_client = BlobServiceClient.from_connection_string(connect_str)    
         else:
