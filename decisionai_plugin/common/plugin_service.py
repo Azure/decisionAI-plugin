@@ -25,6 +25,8 @@ from .util.model import upload_model, download_model
 from .util.monitor import init_monitor, run_monitor, stop_monitor
 from .util.timeutil import str_to_dt
 
+import .util.kafka_operator
+
 import zlib
 import base64
 import gc
@@ -33,7 +35,6 @@ import gc
 #executor = ProcessPoolExecutor()
 #ThreadPool easy for debug
 executor = ThreadPoolExecutor(max_workers=3)
-loop = asyncio.new_event_loop()
 
 #monitor infras
 sched = BackgroundScheduler()
@@ -67,6 +68,10 @@ class PluginService():
             sched.start()
             atexit.register(lambda: stop_monitor(config))
             atexit.register(lambda: sched.shutdown())
+            executor.submit(self.train_wrapper, self.train_callback)
+        
+        executor.submit(self.inference_wrapper, self.inference_callback)
+
 
     # verify parameters
     # Parameters:
@@ -315,8 +320,20 @@ class PluginService():
                 model_id = str(uuid.uuid1())
             insert_meta(self.config, subscription, model_id, request_body)
             meta = get_meta(self.config, subscription, model_id)
+            
+            
+
+
+            job = JobRecord(request.json['JobId'], request.json['Mode'], request.json['AlgorithmName'],
+                            request.json['Params'])
+
+            target_topic = topic_router.get_target_topic(job.algorithm_name, job.mode)
+            job.enqueue('in topic [%s]' % target_topic)
+            kafka_operator.send_message(target_topic, dict(job))
+
+            
+            
             asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_id, task_id, request_body, self.train_callback))
-            log.gauge("thread_pool_queue_size", executor._work_queue.qsize())
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
         except Exception as e:
             meta = get_meta(self.config, subscription, model_id)
