@@ -228,15 +228,13 @@ class PluginService():
 
             self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Running.name)
             result, values, message = self.do_inference(model_dir, parameters, series, Context(subscription, model_id, task_id))
-        except Exception as e:
-            result = STATUS_FAIL
-            values = None
-            message = str(e)
-            raise e
-        finally:
-            shutil.rmtree(model_dir, ignore_errors=True)
             if callback is not None:
                 callback(subscription, model_id, task_id, parameters, result, values, message)
+        except Exception as e:
+            if callback is not None:
+                callback(subscription, model_id, task_id, parameters, STATUS_FAIL, None, str(e))
+        finally:
+            shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
         log.duration("inference_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
