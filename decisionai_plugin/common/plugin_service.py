@@ -25,7 +25,8 @@ from .util.model import upload_model, download_model
 from .util.monitor import init_monitor, run_monitor, stop_monitor
 from .util.timeutil import str_to_dt
 
-import .util.kafka_operator
+from .util.kafka_operator import send_message, consume_loop
+from .util.job_record import JobRecord
 
 import zlib
 import base64
@@ -68,10 +69,12 @@ class PluginService():
             sched.start()
             atexit.register(lambda: stop_monitor(config))
             atexit.register(lambda: sched.shutdown())
-            executor.submit(self.train_wrapper, self.train_callback)
-        
-        executor.submit(self.inference_wrapper, self.inference_callback)
 
+            self.training_topic = self.__class__.__name__ + '-training'
+            executor.submit(consume_loop, self.train_wrapper, self.training_topic)
+
+        self.inference_topic = self.__class__.__name__ + '-inference'
+        executor.submit(consume_loop, self.inference_wrapper, self.inference_topic)
 
     # verify parameters
     # Parameters:
@@ -167,8 +170,13 @@ class PluginService():
     def get_data_time_range(self, parameters, is_training=False):
         return str_to_dt(parameters['startTime']), str_to_dt(parameters['endTime'])
 
-    def train_wrapper(self, subscription, model_id, task_id, parameters, callback):
-        start = time.time()
+    def train_wrapper(self, message):
+        start = time.time()        
+
+        subscription = message['subscription']
+        model_id = message['model_id']
+        task_id = message['job_id']
+        parameters = message['params']
 
         log.info("Start train wrapper for model %s by %s " % (model_id, subscription))
         try:
@@ -187,13 +195,11 @@ class PluginService():
             result, message = self.do_train(model_dir, parameters, series, Context(subscription, model_id, task_id))
 
             if result == STATUS_SUCCESS:
-                if callback is not None:
-                    callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, None)
+                    self.train_callback(subscription, model_id, task_id, model_dir, parameters, ModelState.Ready, None)
             else:
                 raise Exception(message)
         except Exception as e:
-            if callback is not None:
-                callback(subscription, model_id, task_id, None, parameters, ModelState.Failed, str(e))
+            self.train_callback(subscription, model_id, task_id, None, parameters, ModelState.Failed, str(e))
 
             result = STATUS_FAIL
         finally:
@@ -208,8 +214,13 @@ class PluginService():
 
     # inference_window: 30
     # endTime: endtime
-    def inference_wrapper(self, subscription, model_id, task_id, parameters, callback):
+    def inference_wrapper(self, message):
         start = time.time()
+
+        subscription = message['subscription']
+        model_id = message['model_id']
+        task_id = message['job_id']
+        parameters = message['params']
 
         log.info("Start inference wrapper %s by %s " % (model_id, subscription))
         try:
@@ -233,11 +244,9 @@ class PluginService():
 
             self.tsanaclient.save_inference_status(task_id, parameters, InferenceState.Running.name)
             result, values, message = self.do_inference(model_dir, parameters, series, Context(subscription, model_id, task_id))
-            if callback is not None:
-                callback(subscription, model_id, task_id, parameters, result, values, message)
+            self.inference_callback(subscription, model_id, task_id, parameters, result, values, message)
         except Exception as e:
-            if callback is not None:
-                callback(subscription, model_id, task_id, parameters, STATUS_FAIL, None, str(e))
+            self.inference_callback(subscription, model_id, task_id, parameters, STATUS_FAIL, None, str(e))
         finally:
             shutil.rmtree(model_dir, ignore_errors=True)
 
@@ -320,20 +329,10 @@ class PluginService():
                 model_id = str(uuid.uuid1())
             insert_meta(self.config, subscription, model_id, request_body)
             meta = get_meta(self.config, subscription, model_id)
-            
-            
 
-
-            job = JobRecord(request.json['JobId'], request.json['Mode'], request.json['AlgorithmName'],
-                            request.json['Params'])
-
-            target_topic = topic_router.get_target_topic(job.algorithm_name, job.mode)
-            job.enqueue('in topic [%s]' % target_topic)
-            kafka_operator.send_message(target_topic, dict(job))
-
-            
-            
-            asyncio.ensure_future(loop.run_in_executor(executor, self.train_wrapper, subscription, model_id, task_id, request_body, self.train_callback))
+            job = JobRecord(task_id, JobRecord.MODE_TRAINING, self.__class__.__name__, model_id, subscription, request_body)
+            send_message(self.training_topic, dict(job))
+            log.count("training_task_throughput_in", 1, topic_name=self.training_topic, model_id=model_id, endpoint=request_body['apiEndpoint'], group_id=request_body['groupId'], group_name=request_body['groupName'].replace(' ', '_'), instance_id=request_body['instance']['instanceId'], instance_name=request_body['instance']['instanceName'].replace(' ', '_'))
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
         except Exception as e:
             meta = get_meta(self.config, subscription, model_id)
@@ -377,8 +376,10 @@ class PluginService():
 
         log.info('Create inference task')
         task_id = str(uuid.uuid1())
-        asyncio.ensure_future(loop.run_in_executor(executor, self.inference_wrapper, subscription, model_id, task_id, request_body, self.inference_callback))
-        log.gauge("thread_pool_queue_size", executor._work_queue.qsize())
+        job = JobRecord(task_id, JobRecord.MODE_INFERENCE, self.__class__.__name__, model_id, subscription, request_body)
+        send_message(self.inference_topic, dict(job))
+        log.count("inference_task_throughput_in", 1, topic_name=self.inference_topic, model_id=model_id, endpoint=request_body['apiEndpoint'], group_id=request_body['groupId'], group_name=request_body['groupName'].replace(' ', '_'), instance_id=request_body['instance']['instanceId'], instance_name=request_body['instance']['instanceName'].replace(' ', '_'))
+
         return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Inference task created', modelState=ModelState.Ready.name)), 201)
 
     def state(self, request, model_id):

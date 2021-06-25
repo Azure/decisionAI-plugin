@@ -2,8 +2,13 @@ import json
 import os
 from kafka import KafkaConsumer, KafkaProducer
 from telemetry import log
+import time
+import traceback
+
 producer=None
-import ssl
+
+# kafka topics
+DeadLetterTopicFormat = "{base_topic}-dl"
 
 def get_kafka_configs():
     kafka_configs = {"bootstrap_servers": os.environ['KAFKA_ENDPOINT']}
@@ -14,15 +19,7 @@ def get_kafka_configs():
         kafka_configs["sasl_mechanism"] = "PLAIN"
         kafka_configs["sasl_plain_username"] = "$ConnectionString"
         kafka_configs["sasl_plain_password"] = sasl_password
-        '''
-        kafka_configs["api_version"] = (2,0,1)
-        kafka_configs["api_version_auto_timeout_ms"] = 5000
-        context = ssl.create_default_context()
-        context.options &= ssl.OP_NO_TLSv1
-        context.options &= ssl.OP_NO_TLSv1_1
-        kafka_configs["ssl_context"] = context
-        kafka_configs['client_id'] = 'python-example-producer'
-        '''
+
     return kafka_configs
 
 def send_message(topic, message):
@@ -41,35 +38,41 @@ def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
     errors.append(str(err))
     message.value['__ERROR__'] = errors
-    return send_message(constant.DeadLetterTopicFormat.format(base_topic=message.topic), message.value)
+    return send_message(DeadLetterTopicFormat.format(base_topic=message.topic), message.value)
 
 def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None):
-    kafka_configs = get_kafka_configs()
-    if config is not None:
-        kafka_configs.update(config)
-    consumer = KafkaConsumer(topic, **{**kafka_configs,
-                                        'group_id': 'job-controller-%s' % topic,
-                                        'value_deserializer': lambda m: json.loads(m.decode('utf-8')                                        )
-                                       })
-    try:
-        for message in consumer:
-            # log.info("Received message: %s" % str(message))
+    log.info(f"Start of consume_loop for topic {topic}...")
+    while True:
+        try:
+            kafka_configs = get_kafka_configs()
+            if config is not None:
+                kafka_configs.update(config)
+            consumer = KafkaConsumer(topic, **{**kafka_configs,
+                                                'group_id': 'job-controller-%s' % topic,
+                                                'value_deserializer': lambda m: json.loads(m.decode('utf-8')                                        )
+                                            })
             try:
-                process_func(message.value)
-                consumer.commit()
-            except Exception as e:
-                count = message.value.get('__RETRY__', 0)
-                if count >= retry_limit:
-                    log.error("Exceed the maximum number of retries.")
-                    if error_callback:
-                        error_callback(message, e)
-                    append_to_failed_queue(message, e)
-                else:
-                    log.error("Processing message failed, will retry.")
-                    message.value['__RETRY__'] = count + 1
-                    send_message(message.topic, message.value)
-    finally:
-        consumer.close()
+                for message in consumer:
+                    # log.info("Received message: %s" % str(message))
+                    try:
+                        process_func(message.value)
+                        consumer.commit()
+                    except Exception as e:
+                        count = message.value.get('__RETRY__', 0)
+                        if count >= retry_limit:
+                            log.error("Exceed the maximum number of retries.")
+                            if error_callback:
+                                error_callback(message, e)
+                            append_to_failed_queue(message, e)
+                        else:
+                            log.error("Processing message failed, will retry. Error message: " + str(e) + traceback.format_exc())
+                            message.value['__RETRY__'] = count + 1
+                            send_message(message.topic, message.value)
+            finally:
+                consumer.close()
+        except Exception as e:
+            log.error(f"Error in consume_loop for topic {topic}. " + traceback.format_exc())
+            time.sleep(10)
 '''
 def run():
     try:
