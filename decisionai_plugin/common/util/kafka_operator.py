@@ -49,7 +49,9 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                 kafka_configs.update(config)
             consumer = KafkaConsumer(topic, **{**kafka_configs,
                                                 'group_id': 'job-controller-%s' % topic,
-                                                'value_deserializer': lambda m: json.loads(m.decode('utf-8')                                        )
+                                                'value_deserializer': lambda m: json.loads(m.decode('utf-8')),
+                                                'max_poll_records': 1,
+                                                'max_poll_interval_ms': 3600 * 6 * 1000
                                             })
             try:
                 for message in consumer:
