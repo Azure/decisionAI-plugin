@@ -75,73 +75,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
         except Exception as e:
             log.error(f"Error in consume_loop for topic {topic}. " + traceback.format_exc())
             time.sleep(10)
-'''
-def run():
-    try:
-        kafka_configs = InfraRt.get_kafka_configs()
-        consumer_configs = {'group_id': config.KAFKA_GROUPID}
-        consumer = KafkaConsumer(* config.KAFKA_TOPICS, ** {**kafka_configs, **consumer_configs})
-        producer = KafkaProducer(** kafka_configs)
-    except Exception as e:
-        Logger.error('Kafka initialize error', e)
-        raise e
 
-    try:
-        for record in consumer:
-            try:
-                consumer.commit()
-                process_with_retry(record)
-
-            except NonDeadletterError as e:
-                Logger.warning('Skip sending deadletter, error message {}'.format(e))
-            except Exception as e:
-                try:
-                    producer.send(config.KAFKA_DL_TOPIC, record.value, headers=record.headers)
-                except Exception as e_produce:
-                    Logger.error('Failed to send deadletter', e_produce)
-
-    finally:
-        consumer.close()
-
-def redo_failure_all(start, end):
-    parallel = 20
-    q = queue.Queue()
-    metrics_meta_dict = get_metrics_meta_all()
-    for metricid, metricsmeta in metrics_meta_dict.items():
-        q.put((start, end, metricid, metricsmeta))
-
-    logger.info('Metrics count {} totally'.format(q.qsize()))
-    messages = []
-    def qconsumer():
-        while not q.empty():
-            try:
-                taskinfo = q.get(block=False)
-                msgs = get_redo_failure_messages_by_metric(* taskinfo)
-                messages.extend(msgs)
-            except queue.Empty as e:
-                continue
-            except Exception as e:
-                logger.error('Error occurs, task info {}'.format(taskinfo))
-                logger.exception(e)
-
-    workers = [threading.Thread(target=qconsumer) for i in range(parallel)]
-    for w in workers:
-        w.start()
-    for w in workers:
-        w.join()
-
-    logger.info("{} tasks will be scheduled".format(len(messages)))
-
-    kafka_config = InfraRt.get_kafka_configs()
-    producer = KafkaProducer(**kafka_config)
-    for metricid, snapshot in messages:
-        key = str.encode(metricid)
-        value = str.encode(json.dumps(snapshot))
-        producer.send(config.KAFKA_TOPIC, key=key, value=value)   
-
-    producer.flush()
-    logger.info('Successfully')
- '''   
 if __name__ == "__main__":
     sample_msg = {
         "JobId": "",
@@ -151,15 +85,6 @@ if __name__ == "__main__":
         "InputPath": "",
         "OutputPath": ""
     }
-
-    '''
-    from kafka.admin import KafkaAdminClient, NewTopic
-
-    admin_client = KafkaAdminClient(**get_kafka_configs())
-    topic_list = []
-    topic_list.append(NewTopic(name="example_topic", num_partitions=1, replication_factor=1))
-    admin_client.create_topics(new_topics=topic_list, validate_only=False)
-    '''
 
     print("sending message...")
     for i in range(100):
