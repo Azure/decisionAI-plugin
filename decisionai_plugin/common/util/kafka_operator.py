@@ -4,22 +4,45 @@ from kafka import KafkaConsumer, KafkaProducer
 from telemetry import log
 import time
 import traceback
+from configuration import Configuration, get_config_as_str
+from constant import IS_INTERNAL, IS_MT
 
 producer=None
 
 # kafka topics
 DeadLetterTopicFormat = "{base_topic}-dl"
 
-def get_kafka_configs():
-    kafka_configs = {"bootstrap_servers": os.environ['KAFKA_ENDPOINT']}
-    # set secure config items if secure kafka enabled
-    if 'KAFKA_SECURE' in os.environ and bool(os.environ['KAFKA_SECURE']) is True:
-        sasl_password = os.environ['KAFKA_CONN_STRING']
-        kafka_configs["security_protocol"] = "SASL_SSL"
-        kafka_configs["sasl_mechanism"] = "PLAIN"
-        kafka_configs["sasl_plain_username"] = "$ConnectionString"
-        kafka_configs["sasl_plain_password"] = sasl_password
+# get config info
+def _get_endpoint_with_pattern(name):
 
+    config_dir = os.environ['KENSHO2_CONFIG_DIR']
+    endpoints = Configuration(config_dir + 'endpoints.ini')
+
+    kvs = endpoints[name]
+    if 'endpoint' in kvs:
+        return kvs['endpoint']
+    elif 'endpoint-pattern' in kvs:
+        num_replicas = int(get_config_as_str(('%ssystem/%s/replicas' % (config_dir, name)).strip()))
+        pattern = kvs['endpoint-pattern']
+        val = ','.join(map(lambda x: pattern % (x), range(num_replicas)))
+        print("kafka-endpoint: " + val)
+        return val 
+    else:
+        raise Exception('missing endpoint for %s' % (name))
+
+KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka').split(',') if IS_INTERNAL else os.environ['KAFKA_ENDPOINT']
+
+def get_kafka_configs():
+    if IS_MT:
+        sasl_password = os.environ['KAFKA_CONN_STRING']
+        kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS,
+                        "security_protocol": "SASL_SSL",
+                        "sasl_mechanism": "PLAIN",
+                        "sasl_plain_username": "$ConnectionString",
+                        "sasl_plain_password": sasl_password
+                        }
+    else:
+        kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
 def send_message(topic, message):

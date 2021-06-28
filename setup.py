@@ -51,6 +51,7 @@ setup(
         'pandas==1.0.0',
         'azure-identity==1.4.1',
         'kafka-python==2.0.2',
+        'ruamel.yaml==0.16.10',
     ],
 	include_package_data=True
 )
