@@ -4,8 +4,8 @@ from kafka import KafkaConsumer, KafkaProducer
 from telemetry import log
 import time
 import traceback
-from configuration import Configuration, get_config_as_str
-from constant import IS_INTERNAL, IS_MT
+from .configuration import Configuration, get_config_as_str
+from .constant import IS_INTERNAL, IS_MT
 
 producer=None
 
