@@ -33,7 +33,7 @@ def _get_endpoint_with_pattern(name):
 KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka').split(',') if IS_INTERNAL else os.environ['KAFKA_ENDPOINT']
 
 def get_kafka_configs():
-    if IS_MT:
+    if IS_MT or not IS_INTERNAL:
         sasl_password = os.environ['KAFKA_CONN_STRING']
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS,
                         "security_protocol": "SASL_SSL",
