@@ -30,7 +30,7 @@ def _get_endpoint_with_pattern(name):
     else:
         raise Exception('missing endpoint for %s' % (name))
 
-KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka').split(',') if IS_INTERNAL else os.environ['KAFKA_ENDPOINT']
+KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka') if IS_INTERNAL else os.environ['KAFKA_ENDPOINT']
 
 def get_kafka_configs():
     if IS_MT or not IS_INTERNAL:
