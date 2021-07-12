@@ -234,6 +234,7 @@ class TSANAClient(object):
                     count += len(sub_multi_series_data)
 
                     if count >= top:
+                        log.warning(f"Current series num {count} for series set {json.dumps(data)} has reached limit {top}!")
                         break
                 
                 skip = skip + len(series_list)
@@ -362,6 +363,7 @@ class TSANAClient(object):
                     count += len(sub_multi_series_data)
 
                     if count >= top:
+                        log.warning(f"Current series num {count} for series set {json.dumps(data)} has reached limit {top}!")
                         break
                 
                 skip = skip + len(series_list)

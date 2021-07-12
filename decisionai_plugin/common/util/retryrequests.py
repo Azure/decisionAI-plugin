@@ -3,6 +3,9 @@ from requests.adapters import HTTPAdapter
 import time
 from telemetry import log
 
+# disable certificate warning
+requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+
 class CommonException(Exception):
     pass
 
