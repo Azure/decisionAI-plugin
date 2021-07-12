@@ -7,7 +7,7 @@ import time
 import traceback
 import uuid
 from collections import namedtuple
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from os import environ
 
 import yaml
@@ -33,9 +33,9 @@ import base64
 import gc
 
 #async infras
-#executor = ProcessPoolExecutor()
+executor = ProcessPoolExecutor(max_workers=2)
 #ThreadPool easy for debug
-executor = ThreadPoolExecutor(max_workers=3)
+#executor = ThreadPoolExecutor(max_workers=2)
 
 #monitor infras
 sched = BackgroundScheduler()
