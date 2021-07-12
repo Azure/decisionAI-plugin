@@ -33,9 +33,9 @@ import base64
 import gc
 
 #async infras
-executor = ProcessPoolExecutor(max_workers=2)
+#executor = ProcessPoolExecutor(max_workers=2)
 #ThreadPool easy for debug
-#executor = ThreadPoolExecutor(max_workers=2)
+executor = ThreadPoolExecutor(max_workers=2)
 
 #monitor infras
 sched = BackgroundScheduler()
