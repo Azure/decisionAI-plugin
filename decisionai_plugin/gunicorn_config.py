@@ -1,7 +1,7 @@
 # gunicorn_config.py
 import os
 
-workers_number = int(os.environ['GUNICORN_WORKER_NUM'] if "GUNICORN_WORKER_NUM" in os.environ else "3")
+workers_number = int(os.environ['GUNICORN_WORKER_NUM'] if "GUNICORN_WORKER_NUM" in os.environ else "1")
 
 bind = '0.0.0.0:56789'
 keepalive = 75
