@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.47",
+    version="0.0.48",
     description="Time series analysis plugin",
     long_description="An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
     long_description_content_type="text/markdown",
@@ -51,6 +51,7 @@ setup(
         'azure-identity==1.4.1',
         'kafka-python==2.0.2',
         'ruamel.yaml==0.16.10',
+        'confluent_kafka',
     ],
 	include_package_data=True
 )
