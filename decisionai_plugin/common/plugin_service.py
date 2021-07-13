@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import atexit
 import json
 import os
@@ -35,7 +36,7 @@ import gc
 #async infras
 #executor = ProcessPoolExecutor(max_workers=2)
 #ThreadPool easy for debug
-executor = ThreadPoolExecutor(max_workers=2)
+#executor = ThreadPoolExecutor(max_workers=2)
 
 #monitor infras
 sched = BackgroundScheduler()
@@ -71,10 +72,14 @@ class PluginService():
             atexit.register(lambda: sched.shutdown())
 
             self.training_topic = self.__class__.__name__ + '-training'
-            executor.submit(consume_loop, self.train_wrapper, self.training_topic)
+            training_thread = threading.Thread(target=consume_loop, args=(self.train_wrapper, self.training_topic), daemon=True)
+            training_thread.start()    
+            training_thread.join()
 
         self.inference_topic = self.__class__.__name__ + '-inference'
-        executor.submit(consume_loop, self.inference_wrapper, self.inference_topic)
+        inference_thread = threading.Thread(target=consume_loop, args=(self.inference_wrapper, self.inference_topic), daemon=True)
+        inference_thread.start()    
+        inference_thread.join()
 
     # verify parameters
     # Parameters:
