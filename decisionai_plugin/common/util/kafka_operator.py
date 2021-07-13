@@ -77,7 +77,9 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
             consumer_configs = {
                 **kafka_configs,
                 'group.id': 'job-controller-%s' % topic,
-                'max.poll.interval.ms': 3600 * 6 * 1000
+                'max.poll.interval.ms': 3600 * 6 * 1000,
+                'fetch.min.bytes': 100,
+                'fetch.wait.max.ms': 20000,
             }
 
             consumer = Consumer(consumer_configs)
