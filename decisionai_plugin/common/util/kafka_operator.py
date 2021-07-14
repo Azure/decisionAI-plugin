@@ -7,7 +7,6 @@ import traceback
 from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
-import uuid
 
 producer=None
 
@@ -79,7 +78,6 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
             log.info("kafka configs: " + json.dumps(kafka_configs))
             consumer = KafkaConsumer(topic, **{**kafka_configs,
                                                 'group_id': 'job-controller-%s' % topic,
-                                                #'client_id': str(uuid.uuid1()),
                                                 'value_deserializer': lambda m: json.loads(m.decode('utf-8')),
                                                 'max_poll_records': 1,
                                                 'max_poll_interval_ms': 3600 * 6 * 1000
