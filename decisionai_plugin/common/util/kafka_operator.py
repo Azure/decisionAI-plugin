@@ -1,6 +1,6 @@
 import json
 import os
-from confluent_kafka import Consumer, Producer
+from kafka import KafkaConsumer, KafkaProducer
 from telemetry import log
 import time
 import traceback
@@ -36,35 +36,33 @@ KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka') if IS_INTERNAL els
 def get_kafka_configs():
     if IS_MT or not IS_INTERNAL:
         sasl_password = os.environ['KAFKA_CONN_STRING']
-        kafka_configs = {
-            "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
-            "security.protocol": "SASL_SSL",
-            "sasl.mechanism": "PLAIN",
-            "sasl.username": "$ConnectionString",
-            "sasl.password": sasl_password
-        }
+        kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS,
+                        "security_protocol": "SASL_SSL",
+                        "sasl_mechanism": "PLAIN",
+                        "sasl_plain_username": "$ConnectionString",
+                        "sasl_plain_password": sasl_password
+                        }
     else:
-        kafka_configs = {"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS}
+        kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
 def send_message(topic, message):
     global producer
     kafka_configs = get_kafka_configs()
     if producer is None:
-        producer = Producer(**{**kafka_configs,
+        producer = KafkaProducer(**{**kafka_configs,
+                                    'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
                                     'retries': 5
                                     })
-    try:
-        producer.produce(topic, json.dumps(message).encode('utf-8'))
-    except Exception as e:
-        log.error("Produce message failed. Error message: " + str(e))
+    future = producer.send(topic, message)
+    future.get(10)
+    producer.flush()
 
 def append_to_failed_queue(message, err):
-    record_value = json.loads(message.value().decode('utf-8'))
-    errors = record_value.get('__ERROR__', [])
+    errors = message.value.get('__ERROR__', [])
     errors.append(str(err))
-    record_value['__ERROR__'] = errors
-    return send_message(DeadLetterTopicFormat.format(base_topic=message.topic), record_value)
+    message.value['__ERROR__'] = errors
+    return send_message(DeadLetterTopicFormat.format(base_topic=message.topic), message.value)
 
 def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None):
     log.info(f"Start of consume_loop for topic {topic}...")
@@ -74,25 +72,20 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
             if config is not None:
                 kafka_configs.update(config)
             log.info("kafka configs: " + json.dumps(kafka_configs))
-            consumer_configs = {
-                **kafka_configs,
-                'group.id': 'job-controller-%s' % topic,
-                'max.poll.interval.ms': 3600 * 6 * 1000,
-                'fetch.min.bytes': 100,
-                'fetch.wait.max.ms': 20000,
-            }
-
-            consumer = Consumer(consumer_configs)
-            consumer.subscribe([topic])
+            consumer = KafkaConsumer(topic, **{**kafka_configs,
+                                                'group_id': 'job-controller-%s' % topic,
+                                                'value_deserializer': lambda m: json.loads(m.decode('utf-8')),
+                                                'max_poll_records': 1,
+                                                'max_poll_interval_ms': 3600 * 6 * 1000
+                                            })
             try:
-                for message in consumer.consume():
+                for message in consumer:
                     # log.info("Received message: %s" % str(message))
                     try:
-                        record_value = json.loads(message.value().decode('utf-8'))
-                        process_func(record_value)
+                        process_func(message.value)
                         consumer.commit()
                     except Exception as e:
-                        count = record_value.get('__RETRY__', 0)
+                        count = message.value.get('__RETRY__', 0)
                         if count >= retry_limit:
                             log.error("Exceed the maximum number of retries.")
                             if error_callback:
@@ -100,8 +93,8 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                             append_to_failed_queue(message, e)
                         else:
                             log.error("Processing message failed, will retry. Error message: " + str(e) + traceback.format_exc())
-                            record_value['__RETRY__'] = count + 1
-                            send_message(message.topic, record_value)
+                            message.value['__RETRY__'] = count + 1
+                            send_message(message.topic, message.value)
             finally:
                 consumer.close()
         except Exception as e:
