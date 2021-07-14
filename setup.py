@@ -49,7 +49,7 @@ setup(
         'numpy==1.17.3',
         'pandas==1.0.0',
         'azure-identity==1.4.1',
-        'kafka-python==2.0.2',
+        'kafka-python==1.4.7',
         'ruamel.yaml==0.16.10',
         'confluent_kafka',
     ],
