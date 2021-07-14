@@ -56,7 +56,6 @@ def send_message(topic, message):
                                     })
     future = producer.send(topic, message)
     future.get(10)
-    producer.flush()
 
 def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
