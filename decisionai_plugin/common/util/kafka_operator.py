@@ -54,9 +54,13 @@ def send_message(topic, message):
                                     'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
                                     'retries': 5
                                     })
-    future = producer.send(topic, message)
-    future.get(10)
-    producer.flush()
+    #future = producer.send(topic, message)
+    #future.get(10)
+    try:
+        producer.send(topic, message)
+    except Exception as e:
+        producer = None
+        log.error(f"Kafka producer send failed. Error: {str(e)}")
 
 def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
