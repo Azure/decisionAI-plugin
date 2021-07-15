@@ -46,7 +46,7 @@ def get_kafka_configs():
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
-def send_message(topic, message):
+def send_message(topic, message, timeout=10):
     global producer
     kafka_configs = get_kafka_configs()
     if producer is None:
@@ -54,13 +54,14 @@ def send_message(topic, message):
                                     'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
                                     'retries': 5
                                     })
-    #future = producer.send(topic, message)
-    #future.get(10)
     try:
         producer.send(topic, message)
+        future = producer.send(topic, message)
+        future.get(10)
     except Exception as e:
         producer = None
         log.error(f"Kafka producer send failed. Error: {str(e)}")
+        raise e
 
 def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
