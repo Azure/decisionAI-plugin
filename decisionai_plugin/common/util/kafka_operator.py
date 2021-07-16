@@ -48,13 +48,12 @@ def get_kafka_configs():
 
 def send_message(topic, message, timeout=10):
     global producer
-    kafka_configs = get_kafka_configs()
     if producer is None:
+        kafka_configs = get_kafka_configs()
         producer = KafkaProducer(**{**kafka_configs,
                                     'value_serializer': lambda v: json.dumps(v).encode('utf-8')
                                     })
     try:
-        producer.send(topic, message)
         future = producer.send(topic, message)
         future.get(10)
     except Exception as e:
