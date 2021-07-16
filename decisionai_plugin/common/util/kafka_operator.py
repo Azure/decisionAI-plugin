@@ -51,8 +51,7 @@ def send_message(topic, message, timeout=10):
     kafka_configs = get_kafka_configs()
     if producer is None:
         producer = KafkaProducer(**{**kafka_configs,
-                                    'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
-                                    'retries': 5
+                                    'value_serializer': lambda v: json.dumps(v).encode('utf-8')
                                     })
     try:
         producer.send(topic, message)
