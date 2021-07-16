@@ -33,6 +33,8 @@ import zlib
 import base64
 import gc
 
+from importlib import import_module
+
 #async infras
 #executor = ProcessPoolExecutor(max_workers=2)
 #ThreadPool easy for debug
@@ -54,7 +56,7 @@ def load_config(path):
         return None
 
 class PluginService():
-    def __init__(self, trainable=True):
+    def __init__(self, trainable=True, name=None):
         config_file = environ.get('SERVICE_CONFIG_FILE')
         config = load_config(config_file)
         if config is None:
@@ -62,6 +64,7 @@ class PluginService():
             exit()
         self.config = config
         self.tsanaclient = TSANAClient()
+        self.name = name if name else self.__class__.__name__
 
         self.trainable = trainable
         if self.trainable:
@@ -71,11 +74,11 @@ class PluginService():
             atexit.register(lambda: stop_monitor(config))
             atexit.register(lambda: sched.shutdown())
 
-            self.training_topic = self.__class__.__name__ + '-training'
+            self.training_topic = self.name + '-training'
             training_thread = threading.Thread(target=consume_loop, args=(self.train_wrapper, self.training_topic), daemon=True)
             training_thread.start()
 
-        self.inference_topic = self.__class__.__name__ + '-inference'
+        self.inference_topic = self.name + '-inference'
         inference_thread = threading.Thread(target=consume_loop, args=(self.inference_wrapper, self.inference_topic), daemon=True)
         inference_thread.start()
 
@@ -127,6 +130,10 @@ class PluginService():
     # Return:
     #   STATUS_SUCCESS/STATUS_FAIL, error_message
     def do_train(self, model_dir, parameters, series, context:Context):
+        model = import_module("sample." + self.name)
+        train = getattr(model, "train")
+        train(model_dir, parameters, series)
+
         return STATUS_SUCCESS, ''
 
     # inference model
@@ -165,6 +172,10 @@ class PluginService():
     #     fieldValues: 2-d array which include a value list for each field, optional
     #   message: error message
     def do_inference(self, model_dir, parameters, series, context:Context):
+        model = import_module("sample." + self.name)
+        inference = getattr(model, "inference")
+        inference(model_dir, parameters['instance']['params'], series)
+
         return STATUS_SUCCESS, None, ''
 
     def do_delete(self, parameters, model_id):
@@ -238,7 +249,7 @@ class PluginService():
 
             if self.trainable:
                 download_model(self.config, subscription, model_id, model_dir)
-            
+
             start_time, end_time = self.get_data_time_range(parameters)
             if self.config.auto_data_retrieving:
                 series = self.tsanaclient.get_timeseries_gw(parameters, parameters['seriesSets'], start_time, end_time)              
