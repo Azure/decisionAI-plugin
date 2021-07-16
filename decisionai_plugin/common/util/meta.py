@@ -122,7 +122,7 @@ def get_model_list(config, subscription):
 # Return:
 #   entity: a entity with a correct state
 def clear_state_when_necessary(config, subscription, model_id, entity):
-    if 'state' in entity and entity['state'] == ModelState.Training.name:
+    if 'state' in entity and (entity['state'] == ModelState.Training.name or entity['state'] == ModelState.Pending.name):
         azure_table = get_azure_table()
         if not azure_table.exists_table(config.az_tsana_moniter_table):
             return entity

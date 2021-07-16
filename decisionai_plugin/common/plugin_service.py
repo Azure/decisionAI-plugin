@@ -330,12 +330,13 @@ class PluginService():
                 model_id = request_body['modelId']
             else:
                 model_id = str(uuid.uuid1())
-            insert_meta(self.config, subscription, model_id, request_body)
-            meta = get_meta(self.config, subscription, model_id)
 
+            insert_meta(self.config, subscription, model_id, request_body)
+            
             job = JobRecord(task_id, JobRecord.MODE_TRAINING, self.__class__.__name__, model_id, subscription, request_body)
             send_message(self.training_topic, dict(job))
             log.count("training_task_throughput_in", 1, topic_name=self.training_topic, model_id=model_id, endpoint=request_body['apiEndpoint'], group_id=request_body['groupId'], group_name=request_body['groupName'].replace(' ', '_'), instance_id=request_body['instance']['instanceId'], instance_name=request_body['instance']['instanceName'].replace(' ', '_'))
+
             return make_response(jsonify(dict(instanceId=instance_id, modelId=model_id, taskId=task_id, result=STATUS_SUCCESS, message='Training task created', modelState=ModelState.Training.name)), 201)
         except Exception as e:
             meta = get_meta(self.config, subscription, model_id)
