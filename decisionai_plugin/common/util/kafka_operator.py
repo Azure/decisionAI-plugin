@@ -46,7 +46,7 @@ def get_kafka_configs():
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
-def send_message(topic, message, timeout=10):
+def send_message(topic, message):
     global producer
     if producer is None:
         kafka_configs = get_kafka_configs()
@@ -56,6 +56,7 @@ def send_message(topic, message, timeout=10):
                                     })
     try:
         future = producer.send(topic, message)
+        # wait 10 seconds for kafka writing completed!
         future.get(10)
     except Exception as e:
         producer = None
