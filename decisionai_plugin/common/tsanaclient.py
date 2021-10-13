@@ -70,7 +70,7 @@ class TSANAClient(object):
                 except ValueError as e:
                     return "ValueError: " + str(e) + " Content: " + r.content.decode('UTF-8')
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
+            raise Exception('TSANA service api "{}" failed with exception: {}'.format(url, str(e)))
 
     def put(self, api_endpoint, instance_id, api_key, user, path, data):
         if not api_endpoint.startswith('http'):
@@ -106,7 +106,7 @@ class TSANAClient(object):
                 except ValueError:
                     return r.content
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, request:{}, {}'.format(url, json.dumps(data), str(e)))
+            raise Exception('TSANA service api "{}" failed with exception: {}'.format(url, str(e)))
 
     def get(self, api_endpoint, instance_id, api_key, user, path):
         if not api_endpoint.startswith('http'):
@@ -141,7 +141,7 @@ class TSANAClient(object):
             except ValueError:
                 return r.content
         except Exception as e:
-            raise Exception('TSANA service api "{}" failed, {}'.format(url, str(e)))
+            raise Exception('TSANA service api "{}" failed with exception: {}'.format(url, str(e)))
 
     ################ GATEWAY API ################
 
