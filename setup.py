@@ -45,7 +45,7 @@ setup(
         'greenlet==0.4.14',
         #'gevent==1.3.4',
         #'greenlet==0.4.13',
-		'apscheduler',
+	'apscheduler'==3.8.0,
         'numpy==1.17.3',
         'pandas==1.0.0',
         'azure-identity==1.4.1',
