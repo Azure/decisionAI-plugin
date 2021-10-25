@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.48",
+    version="0.0.49",
     description="Time series analysis plugin",
     long_description="An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
     long_description_content_type="text/markdown",
@@ -45,7 +45,7 @@ setup(
         'greenlet==0.4.14',
         #'gevent==1.3.4',
         #'greenlet==0.4.13',
-		'apscheduler',
+	'apscheduler==3.8.0',
         'numpy==1.17.3',
         'pandas==1.0.0',
         'azure-identity==1.4.1',
