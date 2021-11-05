@@ -40,7 +40,9 @@ IS_MT = True if os.environ.get('IS_MULTI_TENANCY', 'false') == 'true' else False
 IS_INTERNAL = True if os.environ.get('MA_INTERNAL', 'false') == 'true' else False
 
 INSTANCE_ID_KEY = 'x-instance-id'
-META_ENDPOINT = "http://powerai-metadata3p-api.kensho2-service.svc.cluster.local:2000" if not IS_MT else "http://powerai-metadata3p-api.metricsadvisor-mt.svc.cluster.local:2000"
+
+NAME_SPACE = os.getenv('NANESPACE_SERVICE', 'metricsadvisor-mt')
+META_ENDPOINT = "http://powerai-metadata3p-api.kensho2-service.svc.cluster.local:2000" if not IS_MT else f"http://powerai-metadata3p-api.{NAME_SPACE}.svc.cluster.local:2000"
 INGESTION_ENDPOINT = "http://powerai-ingestion-api.kensho2-service.svc.cluster.local:8099" if not IS_MT else "http://powerai-ingestion-api.metricsadvisor-mt.svc.cluster.local:8099"
 TSG_ENDPOINT = "http://powerai-time-series-group-api-3p.kensho2-service.svc.cluster.local:6666" if not IS_MT else "http://powerai-time-series-group-api-3p.metricsadvisor-mt.svc.cluster.local:6666"
 INSTANCE_ID_PLACEHOLDER = '__INSTANCE_ID__'
