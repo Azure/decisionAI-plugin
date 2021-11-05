@@ -572,7 +572,7 @@ class TSANAClient(object):
                 'operation': 'Train',
                 'context': context,
                 'status': status,
-                'lastError': last_error if last_error is not None else ''
+                'lastError': str(last_error)[:1000] if last_error is not None else ''
                 }
                
             self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY], parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
@@ -611,7 +611,7 @@ class TSANAClient(object):
                 'operation': 'Inference',
                 'context': context,
                 'status': status,
-                'lastError': last_error if last_error is not None else ''
+                'lastError': str(last_error)[:1000] if last_error is not None else ''
                 }
                
             self.post(TSG_ENDPOINT if IS_INTERNAL else parameters['apiEndpointV2'] + TSG_API, parameters[INSTANCE_ID_KEY], parameters['apiKey'], parameters['groupId'] + USER_ADDR, '/timeSeriesGroups/' + parameters['groupId'] + '/appInstances/' + parameters['instance']['instanceId'] + '/ops', body)
