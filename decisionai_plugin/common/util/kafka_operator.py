@@ -58,8 +58,10 @@ def send_message(topic, message):
         future = producer.send(topic, message)
         # wait 10 seconds for kafka writing completed!
         future.get(10)
+        log.count("write_to_kafka", 1,  topic=topic, result='Success')
     except Exception as e:
         producer = None
+        log.count("write_to_kafka", 1,  topic=topic, result='Failed')
         log.error(f"Kafka producer send failed. Error: {str(e)}")
         raise e
 
@@ -87,6 +89,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                 for message in consumer:
                     # log.info("Received message: %s" % str(message))
                     try:
+                        log.count("read_from_kafka", 1,  topic=topic)
                         process_func(message.value)
                         consumer.commit()
                     except Exception as e:
