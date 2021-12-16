@@ -44,11 +44,11 @@ class FastReadCounter:
     def increment(self):
         with self._lock:
             self.value += 1
-            self.value & 2147483647
+            self.value &= 2147483647
 
     def get_and_increment(self):
         with self._lock:
             self.value += 1
-            self.value & 2147483647
+            self.value &= 2147483647
             print("[rr] counter: ", self.value)
             return self.value
