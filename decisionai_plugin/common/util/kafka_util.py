@@ -50,5 +50,4 @@ class FastReadCounter:
         with self._lock:
             self.value += 1
             self.value &= 2147483647
-            print("[rr] counter: ", self.value)
             return self.value
