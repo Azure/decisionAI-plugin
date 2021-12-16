@@ -19,7 +19,6 @@ class RoundRobinPartitioner(DefaultPartitioner):
         if key is None:
             next_value = cls.__next_value()
             if available:
-                print("[rr] partition: ",next_value % len(available))
                 return next_value % len(available)
             return next_value % len(all_partitions)
 
