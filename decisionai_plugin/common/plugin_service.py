@@ -260,8 +260,6 @@ class PluginService():
         
         return STATUS_SUCCESS, ''
 
-    def get_result_wrapper(self, message):
-
     def train_callback(self, subscription, model_id, task_id, model_dir, parameters, model_state, last_error=None):
         try:
             meta = get_meta(self.config, subscription, model_id)
