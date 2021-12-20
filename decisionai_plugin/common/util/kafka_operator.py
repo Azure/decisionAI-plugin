@@ -7,6 +7,7 @@ import traceback
 from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
+from kafka_util import RoundRobinPartitioner
 
 producer=None
 
@@ -40,7 +41,8 @@ def get_kafka_configs():
                         "security_protocol": "SASL_SSL",
                         "sasl_mechanism": "PLAIN",
                         "sasl_plain_username": "$ConnectionString",
-                        "sasl_plain_password": sasl_password
+                        "sasl_plain_password": sasl_password,
+                        "partitioner": RoundRobinPartitioner()
                         }
     else:
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
@@ -89,6 +91,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                 for message in consumer:
                     # log.info("Received message: %s" % str(message))
                     try:
+                        log.duration("message latency", time.time() * 1000 - message.timestamp)
                         log.count("read_from_kafka", 1,  topic=topic)
                         process_func(message.value)
                         consumer.commit()
