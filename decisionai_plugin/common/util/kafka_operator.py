@@ -7,7 +7,7 @@ import traceback
 from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
-from kafka_util import RoundRobinPartitioner
+from .kafka_util import RoundRobinPartitioner
 
 producer=None
 
