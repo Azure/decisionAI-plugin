@@ -1,6 +1,7 @@
 from kafka.partitioner.default import DefaultPartitioner
 import random
 import threading
+import json
 
 
 class RoundRobinPartitioner(DefaultPartitioner):
@@ -34,6 +35,14 @@ class RoundRobinPartitioner(DefaultPartitioner):
             atomic_counter = cls.__topic_counter_map.get(topic)
         return atomic_counter.get_and_increment()
 
+    def __str__(self):
+        result = type(self).__name__ + "{"
+
+        for k,v in self.__dict__.items():
+            result += str(k) + ": " + str(v) + ", "
+        result = result[:-2]
+        result += "}"
+        return result
 
 class FastReadCounter:
     def __init__(self):
