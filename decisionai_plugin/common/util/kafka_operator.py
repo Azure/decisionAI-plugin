@@ -8,8 +8,6 @@ from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
 from .kafka_util import RoundRobinPartitioner
-json.dumps()
-producer=None
 
 # kafka topics
 DeadLetterTopicFormat = "{base_topic}-dl"
