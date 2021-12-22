@@ -181,6 +181,8 @@ class PluginService():
         task_id = message['job_id']
         parameters = message['params']
 
+        model_dir = None
+
         log.info("Start train wrapper for model %s by %s " % (model_id, subscription))
         try:
             self.tsanaclient.save_training_status(task_id, parameters, ModelState.Pending.name)
@@ -206,7 +208,8 @@ class PluginService():
 
             result = STATUS_FAIL
         finally:
-            shutil.rmtree(model_dir, ignore_errors=True)
+            if model_dir is not None:
+                shutil.rmtree(model_dir, ignore_errors=True)
 
         total_time = (time.time() - start)
         log.duration("training_task_duration", total_time, model_id=model_id, task_id=task_id, result=result, endpoint=parameters['apiEndpoint'], group_id=parameters['groupId'], group_name=parameters['groupName'].replace(' ', '_'), instance_id=parameters['instance']['instanceId'], instance_name=parameters['instance']['instanceName'].replace(' ', '_'))
