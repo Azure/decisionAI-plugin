@@ -42,7 +42,6 @@ def get_kafka_configs():
                         "sasl_mechanism": "PLAIN",
                         "sasl_plain_username": "$ConnectionString",
                         "sasl_plain_password": sasl_password,
-                        "partitioner": RoundRobinPartitioner()
                         }
     else:
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
@@ -54,7 +53,8 @@ def send_message(topic, message):
         kafka_configs = get_kafka_configs()
         producer = KafkaProducer(**{**kafka_configs,
                                     'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
-                                    'retries': 5
+                                    'retries': 5,
+                                    "partitioner": RoundRobinPartitioner()
                                     })
     try:
         future = producer.send(topic, message)
