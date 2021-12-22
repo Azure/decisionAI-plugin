@@ -80,7 +80,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
             kafka_configs = get_kafka_configs()
             if config is not None:
                 kafka_configs.update(config)
-            log.info("kafka configs: " + str(kafka_configs))
+            log.info("kafka configs: " + json.dumps(kafka_configs))
             consumer = KafkaConsumer(topic, **{**kafka_configs,
                                                 'group_id': 'job-controller-%s' % topic,
                                                 'value_deserializer': lambda m: json.loads(m.decode('utf-8')),
