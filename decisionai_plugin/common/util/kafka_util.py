@@ -34,6 +34,8 @@ class RoundRobinPartitioner(DefaultPartitioner):
             atomic_counter = cls.__topic_counter_map.get(topic)
         return atomic_counter.get_and_increment()
 
+    def __str__(self):
+        return type(self).__name__ + str(self.__dict__)
 
 class FastReadCounter:
     def __init__(self):
