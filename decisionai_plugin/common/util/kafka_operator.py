@@ -9,6 +9,8 @@ from .constant import IS_INTERNAL, IS_MT
 import json
 from .kafka_util import RoundRobinPartitioner
 
+producer=None
+
 # kafka topics
 DeadLetterTopicFormat = "{base_topic}-dl"
 
