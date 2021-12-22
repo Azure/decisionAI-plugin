@@ -35,13 +35,7 @@ class RoundRobinPartitioner(DefaultPartitioner):
         return atomic_counter.get_and_increment()
 
     def __str__(self):
-        result = type(self).__name__ + "{"
-
-        for k,v in self.__dict__.items():
-            result += str(k) + ": " + str(v) + ", "
-        result = result[:-2]
-        result += "}"
-        return result
+        return type(self).__name__ + str(self.__dict__)
 
 class FastReadCounter:
     def __init__(self):
