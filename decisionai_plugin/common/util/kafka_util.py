@@ -1,7 +1,6 @@
 from kafka.partitioner.default import DefaultPartitioner
 import random
 import threading
-import json
 
 
 class RoundRobinPartitioner(DefaultPartitioner):
