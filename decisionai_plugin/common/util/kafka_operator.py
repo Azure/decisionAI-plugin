@@ -47,7 +47,7 @@ def get_kafka_configs():
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
-def send_message(topic, message):
+def send_message(topic, message, err_callback=None):
     global producer
     if producer is None:
         kafka_configs = get_kafka_configs()
@@ -57,9 +57,12 @@ def send_message(topic, message):
                                     "partitioner": RoundRobinPartitioner()
                                     })
     try:
-        future = producer.send(topic, message)
-        # wait 10 seconds for kafka writing completed!
-        future.get(10)
+        if err_callback is not None:
+            producer.send(topic, message).add_errback(err_callback, message)
+        else:
+            future = producer.send(topic, message)
+            # wait 60 seconds for kafka writing completed!
+            future.get(20)
         log.count("write_to_kafka", 1,  topic=topic, result='Success')
     except Exception as e:
         producer = None
