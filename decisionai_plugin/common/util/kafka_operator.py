@@ -70,14 +70,6 @@ def send_message(topic, message, err_callback=None):
         log.error(f"Kafka producer send failed. Error: {str(e)}")
         raise e
 
-def on_send_error(excp, message):
-    log.error("Sending message into message queue failed. Error message:" + str(excp))
-    # change status
-
-    task_id = message["job_id"]
-    parameters = message["params"]
-    self.tsanaclient.save_inference_status(task_id, parameters, "Failed")
-
 def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
     errors.append(str(err))
