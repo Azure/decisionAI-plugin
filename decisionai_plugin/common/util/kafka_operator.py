@@ -47,7 +47,7 @@ def get_kafka_configs():
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
-def send_message(topic, message):
+def send_message(topic, message, err_callback=None):
     global producer
     if producer is None:
         kafka_configs = get_kafka_configs()
@@ -57,15 +57,26 @@ def send_message(topic, message):
                                     "partitioner": RoundRobinPartitioner()
                                     })
     try:
-        future = producer.send(topic, message)
-        # wait 60 seconds for kafka writing completed!
-        future.get(60)
+        if err_callback is not None:
+            producer.send(topic, message).add_errback(on_send_error, message)
+        else:
+            future = producer.send(topic, message)
+            # wait 60 seconds for kafka writing completed!
+            future.get(60)
         log.count("write_to_kafka", 1,  topic=topic, result='Success')
     except Exception as e:
         producer = None
         log.count("write_to_kafka", 1,  topic=topic, result='Failed')
         log.error(f"Kafka producer send failed. Error: {str(e)}")
         raise e
+
+def on_send_error(excp, message):
+    log.error("Sending message into message queue failed. Error message:" + str(excp))
+    # change status
+
+    task_id = message["job_id"]
+    parameters = message["params"]
+    self.tsanaclient.save_inference_status(task_id, parameters, "Failed")
 
 def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
