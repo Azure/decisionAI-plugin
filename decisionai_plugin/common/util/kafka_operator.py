@@ -58,11 +58,11 @@ def send_message(topic, message, err_callback=None):
                                     })
     try:
         if err_callback is not None:
-            producer.send(topic, message).add_errback(on_send_error, message)
+            producer.send(topic, message).add_errback(err_callback, message)
         else:
             future = producer.send(topic, message)
             # wait 60 seconds for kafka writing completed!
-            future.get(60)
+            future.get(20)
         log.count("write_to_kafka", 1,  topic=topic, result='Success')
     except Exception as e:
         producer = None
