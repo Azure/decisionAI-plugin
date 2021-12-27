@@ -58,8 +58,8 @@ def send_message(topic, message):
                                     })
     try:
         future = producer.send(topic, message)
-        # wait 10 seconds for kafka writing completed!
-        future.get(10)
+        # wait 60 seconds for kafka writing completed!
+        future.get(60)
         log.count("write_to_kafka", 1,  topic=topic, result='Success')
     except Exception as e:
         producer = None
