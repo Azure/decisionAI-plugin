@@ -94,7 +94,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                 for message in consumer:
                     # log.info("Received message: %s" % str(message))
                     try:
-                        log.duration("message_latency", time.time() * 1000 - message.timestamp, topic=topic)
+                        log.duration("message_latency", time.time() - message.timestamp/1000, topic=topic, partition=message.partition)
                         log.count("read_from_kafka", 1,  topic=topic, partition=message.partition)
                         process_func(message.value)
                         consumer.commit()
