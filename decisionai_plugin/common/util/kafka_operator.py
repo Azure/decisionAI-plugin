@@ -1,6 +1,7 @@
 import json
 import os
 from kafka import KafkaConsumer, KafkaProducer
+from kafka.errors import KafkaTimeoutError
 from telemetry import log
 import time
 import traceback
@@ -47,7 +48,7 @@ def get_kafka_configs():
         kafka_configs = {"bootstrap_servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
-def send_message(topic, message, err_callback=None):
+def send_message(topic, message, err_callback=None, retry=3):
     global producer
     if producer is None:
         kafka_configs = get_kafka_configs()
@@ -56,19 +57,28 @@ def send_message(topic, message, err_callback=None):
                                     'retries': 5,
                                     "partitioner": RoundRobinPartitioner()
                                     })
-    try:
-        if err_callback is not None:
-            producer.send(topic, message).add_errback(err_callback, message)
-        else:
-            future = producer.send(topic, message)
-            # wait 60 seconds for kafka writing completed!
-            future.get(20)
-        log.count("write_to_kafka", 1,  topic=topic, result='Success')
-    except Exception as e:
-        producer = None
-        log.count("write_to_kafka", 1,  topic=topic, result='Failed')
-        log.error(f"Kafka producer send failed. Error: {str(e)}")
-        raise e
+
+    while True:
+        try:
+            if err_callback is not None:
+                producer.send(topic, message).add_errback(err_callback, message)
+            else:
+                future = producer.send(topic, message)
+                producer.flush()
+                # wait 10 seconds for kafka writing completed!
+                future.get(10)
+            log.count("write_to_kafka", 1,  topic=topic, result='Success')
+            break
+        except Exception as e:
+            # producer = None
+            if isinstance(e, KafkaTimeoutError) and retry:
+                retry -= 1
+                log.info("Kafka producer retries.")
+                continue
+            else:
+                log.count("write_to_kafka", 1,  topic=topic, result='Failed')
+                log.error(f"Kafka producer send failed. Error: {str(e)}")
+                raise e
 
 def append_to_failed_queue(message, err):
     errors = message.value.get('__ERROR__', [])
