@@ -105,7 +105,8 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                                                'group_id': 'job-controller-v2-%s' % topic,
                                                'value_deserializer': lambda m: json.loads(m.decode('utf-8')),
                                                'max_poll_records': 1,
-                                               'max_poll_interval_ms': 3600 * 6 * 1000
+                                               'max_poll_interval_ms': 3600 * 6 * 1000,
+                                               'enable_auto_commit': False,
                                                })
             try:
                 for message in consumer:
