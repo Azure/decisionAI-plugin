@@ -53,18 +53,19 @@ def get_kafka_configs():
 
 def send_message(topic, message, err_callback=None, retry=3):
     global producer
-    if producer is None:
-        kafka_configs = get_kafka_configs()
-        producer = KafkaProducer(**{**kafka_configs,
-                                    'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
-                                    'retries': 5,
-                                    "partitioner": RoundRobinPartitioner()
-                                    })
+
     # keep consistency
     retry -= 1
 
     while True:
         try:
+            if producer is None:
+                kafka_configs = get_kafka_configs()
+                producer = KafkaProducer(**{**kafka_configs,
+                                            'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
+                                            'retries': 5,
+                                            "partitioner": RoundRobinPartitioner()
+                                            })
             if err_callback is not None:
                 producer.send(topic, message).add_errback(err_callback, message)
             else:
@@ -75,7 +76,8 @@ def send_message(topic, message, err_callback=None, retry=3):
             log.count("write_to_kafka", 1, topic=topic, result='Success')
             break
         except Exception as e:
-            # producer = None
+            producer.close()
+            producer = None
             if isinstance(e, KafkaTimeoutError) and retry:
                 retry -= 1
                 log.info("Kafka producer retries.")
