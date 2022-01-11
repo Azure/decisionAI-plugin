@@ -76,8 +76,9 @@ def send_message(topic, message, err_callback=None, retry=3):
             log.count("write_to_kafka", 1, topic=topic, result='Success')
             break
         except Exception as e:
-            producer.close()
-            producer = None
+            if producer is not None:
+                producer.close()
+                producer = None
             if isinstance(e, KafkaTimeoutError) and retry:
                 retry -= 1
                 log.info("Kafka producer retries.")
