@@ -8,6 +8,11 @@ from flask_restful import Resource, Api
 from .plugin_service import PluginService
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
 
+from azure.eventhub import EventHubProducerClient
+
+producer = EventHubProducerClient.from_connection_string(conn_str='')
+producer
+
 import logging
 
 app = Flask(__name__)
