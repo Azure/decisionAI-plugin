@@ -37,6 +37,7 @@ setup(
 		'flask_restful',
 		'requests',
 		'python-dateutil',
+        'azure-eventhub',
 		'azure-storage-blob==12.1.0',
 		'azure-cosmosdb-table==1.0.6',
 		'Werkzeug==0.16.0',
