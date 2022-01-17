@@ -16,6 +16,6 @@ azure-identity==1.4.1
 kafka-python==1.4.7
 ruamel.yaml==0.16.10
 confluent_kafka
-azure-eventhub
+
 
 #https://pythonpackagerepo.blob.core.windows.net/pip-package/anomaly_detector_telemetry-3.0.tar.gz
