@@ -3,13 +3,15 @@ import os
 from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import KafkaTimeoutError
 from telemetry import log
+import asyncio
 import time
 import traceback
 from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
 from .kafka_util import RoundRobinPartitioner
-from azure.eventhub import EventHubProducerClient, EventHubConsumerClient, EventData
+from azure.eventhub import EventHubProducerClient, EventData
+from azure.eventhub.aio import EventHubConsumerClient
 from azure.eventhub.exceptions import OperationTimeoutError
 
 producer = None
@@ -182,7 +184,7 @@ def append_to_failed_queue(message, err):
 def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None):
     log.info(f"Start of consume_loop for topic {topic}...")
 
-    def process_function_wrapper(partition_context, event):
+    async def process_function_wrapper(partition_context, event):
 
         message = event.body_as_json(encoding="UTF-8")
         try:
@@ -199,27 +201,29 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                     e) + traceback.format_exc())
                 message['__RETRY__'] = count + 1
                 send_message(partition_context.eventhub_name, message)
+        finally:
+            partition_context.update_checkpoint(event)
 
+    async def consume():
+        eventhubs_configs = get_eventhubs_configs()
+        if config is not None:
+            eventhubs_configs.update(config)
+        log.info("Event Hubs configs: " + json.dumps(eventhubs_configs))
+        consumer = EventHubConsumerClient.from_connection_string(**{**eventhubs_configs,
+                                                                    "consumer_group": 'job-controller-v2-%s' % topic,
+                                                                    "eventhub_name": topic,
+                                                                    })
+
+        async with consumer:
+            await consumer.receive(on_event=process_function_wrapper)
 
     while True:
         try:
-            eventhubs_configs = get_eventhubs_configs()
-            if config is not None:
-                eventhubs_configs.update(config)
-            log.info("Event Hubs configs: " + json.dumps(eventhubs_configs))
-            consumer = EventHubConsumerClient.from_connection_string(**{**eventhubs_configs,
-                                                                        "consumer_group": 'job-controller-v2-%s' % topic,
-                                                                        "eventhub_name": topic,
-                                                                        })
-            try:
-                with consumer:
-                    consumer.receive(on_event=process_function_wrapper)
-            finally:
-                consumer.close()
+            asyncio.run(consume())
 
         except Exception as e:
             log.error(f"Error in consume_loop for topic {topic}. " + traceback.format_exc())
-            time.sleep(10)
+            time.sleep(5)
 
 
 
