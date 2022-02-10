@@ -82,7 +82,6 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                 **kafka_configs,
                 'group.id': 'job-controller-v2-%s' % topic,
                 'max.poll.interval.ms': 3600 * 6 * 1000,
-                'max.poll.records': 1,
                 'enable.auto.commit': False
             }
 
