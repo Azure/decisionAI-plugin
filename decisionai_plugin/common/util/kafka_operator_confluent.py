@@ -98,6 +98,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                     time.sleep(0.01)
                     message = consumer.poll(timeout=1.0)
                     if message is None:
+                        time.sleep(1)
                         continue
                     if message.error():
                         raise KafkaException(message.error())
