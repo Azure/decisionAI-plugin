@@ -94,6 +94,8 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
 
             try:
                 while True:
+                    # add this sleep to avoid gevent block with gunicorn
+                    time.sleep(0.01)
                     message = consumer.poll(timeout=1.0)
                     if message is None:
                         continue
