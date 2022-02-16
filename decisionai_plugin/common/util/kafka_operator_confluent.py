@@ -7,8 +7,10 @@ import traceback
 from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
+from gevent.threading import Lock
 
 producer=None
+lock = Lock()
 
 # kafka topics
 DeadLetterTopicFormat = "{base_topic}-dl"
@@ -47,21 +49,28 @@ def get_kafka_configs():
         kafka_configs = {"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs
 
+def flush():
+    with lock:
+        if producer is not None:
+            producer.flush()
+
 def send_message(topic, message):
     global producer
     kafka_configs = get_kafka_configs()
-    if producer is None:
-        producer = Producer(**{**kafka_configs,
-                                    'retries': 5
-                                    })
-    try:
-        producer.produce(topic, json.dumps(message).encode('utf-8'))
-        producer.poll(timeout=0)
-        log.count("write_to_kafka", 1,  topic=topic, result='Success')
-    except Exception as e:
-        producer = None
-        log.count("write_to_kafka", 1,  topic=topic, result='Failed')
-        log.error("Produce message failed. Error message: " + str(e))
+    with lock:
+        if producer is None:
+            producer = Producer(**{**kafka_configs,
+                                        'retries': 5
+                                        })
+        try:
+            producer.produce(topic, json.dumps(message).encode('utf-8'))
+            time.sleep(0.01)
+            producer.poll(timeout=0)
+            log.count("write_to_kafka", 1,  topic=topic, result='Success')
+        except Exception as e:
+            producer = None
+            log.count("write_to_kafka", 1,  topic=topic, result='Failed')
+            log.error("Produce message failed. Error message: " + str(e))
 
 def append_to_failed_queue(message, err):
     record_value = json.loads(message.value().decode('utf-8'))
