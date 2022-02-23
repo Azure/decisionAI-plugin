@@ -34,6 +34,7 @@ setup(
 	install_requires=[
 		'pyyaml',
 		'Flask==1.1.1',
+        'itsdangerous==1.1.0',
 		'flask_restful',
 		'requests',
 		'python-dateutil',
