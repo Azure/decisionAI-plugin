@@ -34,7 +34,7 @@ setup(
 	install_requires=[
 		'pyyaml',
 		'Flask==1.1.1',
-        'itsdangerous==1.1.0',
+        'itsdangerous==2.0.1',
 		'flask_restful',
 		'requests',
 		'python-dateutil',
@@ -46,7 +46,7 @@ setup(
         'greenlet==0.4.14',
         #'gevent==1.3.4',
         #'greenlet==0.4.13',
-	'apscheduler==3.8.0',
+        'apscheduler==3.8.0',
         'numpy==1.17.3',
         'pandas==1.0.0',
         'azure-identity==1.4.1',
