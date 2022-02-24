@@ -61,7 +61,7 @@ def send_message(topic, message):
         if producer is None:
             producer = Producer(**{**kafka_configs,
                                         'retries': 3,
-                                        'batch.size': 0
+                                        'batch.num.messages': 1
                                         })
         try:
             producer.produce(topic, json.dumps(message).encode('utf-8'))
