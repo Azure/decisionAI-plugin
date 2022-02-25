@@ -65,7 +65,6 @@ def send_message(topic, message):
                                         })
         try:
             producer.produce(topic, json.dumps(message).encode('utf-8'))
-            time.sleep(0.01)
             producer.poll(timeout=0)
             log.count("write_to_kafka", 1,  topic=topic, result='Success')
         except Exception as e:
@@ -105,10 +104,10 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
             try:
                 while True:
                     # add this sleep to avoid gevent block with gunicorn
-                    time.sleep(0.01)
+                    time.sleep(0.1)
                     message = consumer.poll(timeout=0)
                     if message is None:
-                        time.sleep(0.1)
+                        time.sleep(1)
                         continue
                     if message.error():
                         raise KafkaException(message.error())
