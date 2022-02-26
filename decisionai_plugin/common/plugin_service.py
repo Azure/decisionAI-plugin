@@ -78,6 +78,7 @@ class PluginService():
         self.inference_topic = self.__class__.__name__ + '-inference'
         inference_thread = threading.Thread(target=consume_loop, args=(self.inference_wrapper, self.inference_topic), daemon=True)
         inference_thread.start()
+        log.info(f"Start new PluginService... thread: {threading.get_ident()}")
 
     # verify parameters
     # Parameters:

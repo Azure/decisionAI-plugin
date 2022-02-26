@@ -7,10 +7,10 @@ import traceback
 from .configuration import Configuration, get_config_as_str
 from .constant import IS_INTERNAL, IS_MT
 import json
-from gevent.threading import Lock
+import threading
 
 producer=None
-lock = Lock()
+lock = threading.Lock()
 
 # kafka topics
 DeadLetterTopicFormat = "{base_topic}-dl"
@@ -80,7 +80,7 @@ def append_to_failed_queue(message, err):
     return send_message(DeadLetterTopicFormat.format(base_topic=message.topic), record_value)
 
 def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None):
-    log.info(f"Start of consume_loop for topic {topic}...")
+    log.info(f"Start of consume_loop for topic {topic}..., thread: {threading.get_ident()}")
     while True:
         try:
             kafka_configs = get_kafka_configs()
