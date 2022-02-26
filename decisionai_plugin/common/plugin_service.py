@@ -57,7 +57,7 @@ import ctypes
 import sys
 
 def gettid():
-    if sys.platform == 'linux2':
+    if sys.platform == 'linux':
         return ctypes.CDLL('libc.so.6').syscall(186)
     else:
         return ctypes.windll.kernel32.GetCurrentThreadId()
