@@ -79,8 +79,17 @@ def append_to_failed_queue(message, err):
     record_value['__ERROR__'] = errors
     return send_message(DeadLetterTopicFormat.format(base_topic=message.topic), record_value)
 
+import ctypes
+import sys
+
+def gettid():
+    if sys.platform == 'linux2':
+        return ctypes.CDLL('libc.so.6').syscall(186)
+    else:
+        return ctypes.windll.kernel32.GetCurrentThreadId()
+
 def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None):
-    log.info(f"Start of consume_loop for topic {topic}..., thread: {threading.get_ident()}")
+    log.info(f"Start of consume_loop for topic {topic}..., thread: {gettid()}")
     while True:
         try:
             kafka_configs = get_kafka_configs()

@@ -53,6 +53,15 @@ def load_config(path):
     except Exception:
         return None
 
+import ctypes
+import sys
+
+def gettid():
+    if sys.platform == 'linux2':
+        return ctypes.CDLL('libc.so.6').syscall(186)
+    else:
+        return ctypes.windll.kernel32.GetCurrentThreadId()
+
 class PluginService():
     def __init__(self, trainable=True):
         config_file = environ.get('SERVICE_CONFIG_FILE')
@@ -78,7 +87,7 @@ class PluginService():
         self.inference_topic = self.__class__.__name__ + '-inference'
         inference_thread = threading.Thread(target=consume_loop, args=(self.inference_wrapper, self.inference_topic), daemon=True)
         inference_thread.start()
-        log.info(f"Start new PluginService... thread: {threading.get_ident()}")
+        log.info(f"Start new PluginService... thread: {gettid()}")
 
     # verify parameters
     # Parameters:
