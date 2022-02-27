@@ -81,8 +81,8 @@ class PluginService():
             atexit.register(lambda: sched.shutdown())
 
             self.training_topic = self.__class__.__name__ + '-training'
-            training_thread = threading.Thread(target=consume_loop, args=(self.train_wrapper, self.training_topic), daemon=True)
-            training_thread.start()
+            #training_thread = threading.Thread(target=consume_loop, args=(self.train_wrapper, self.training_topic), daemon=True)
+            #training_thread.start()
 
         self.inference_topic = self.__class__.__name__ + '-inference'
         #inference_thread = threading.Thread(target=consume_loop, args=(self.inference_wrapper, self.inference_topic), daemon=True)
