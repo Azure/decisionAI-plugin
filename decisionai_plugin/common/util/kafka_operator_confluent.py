@@ -88,7 +88,7 @@ def gettid():
     else:
         return ctypes.windll.kernel32.GetCurrentThreadId()
 
-def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None):
+def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config=None, context=None):
     log.info(f"Start of consume_loop for topic {topic}..., thread: {gettid()}")
     while True:
         try:
@@ -126,7 +126,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                         log.duration("read_from_kafka", 1,  topic=topic)
                         try:
                             record_value = json.loads(message.value().decode('utf-8'))
-                            process_func(record_value)
+                            process_func(record_value, context)
                             consumer.commit()
                         except Exception as e:
                             count = record_value.get('__RETRY__', 0)
