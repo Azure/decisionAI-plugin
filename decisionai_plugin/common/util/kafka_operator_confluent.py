@@ -131,7 +131,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
                         except Exception as e:
                             count = record_value.get('__RETRY__', 0)
                             if count >= retry_limit:
-                                log.error("Exceed the maximum number of retries.")
+                                log.error("Exceed the maximum number of retries. Error message: " + str(e))
                                 if error_callback:
                                     error_callback(message, e)
                                 append_to_failed_queue(message, e)
