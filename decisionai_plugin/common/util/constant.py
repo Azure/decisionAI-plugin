@@ -10,9 +10,12 @@ class ModelState(enum.Enum):
 
 class InferenceState(enum.Enum):
     Pending = 0
-    Running = 1
-    Ready = 2
-    Failed = 3
+    Preprocessing = 1
+    Inferencing = 2
+    Retrieving = 3
+    Postprocessing = 4
+    Ready = 5
+    Failed = 6
 
 STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Fail'
