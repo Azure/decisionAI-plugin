@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.53",
+    version="0.0.54",
     description="Time series analysis plugin",
     long_description="An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
     long_description_content_type="text/markdown",
@@ -33,8 +33,8 @@ setup(
     python_requires='>=3.6',
 	install_requires=[
 		'pyyaml',
-		'Flask==1.1.1',
-        'itsdangerous==2.0.1',
+		'Flask==2.0.3',
+        #'itsdangerous==2.0.1',
 		'flask_restful',
 		'requests',
 		'python-dateutil',
