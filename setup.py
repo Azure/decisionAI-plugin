@@ -40,7 +40,7 @@ setup(
 		'python-dateutil',
 		'azure-storage-blob==12.1.0',
 		'azure-cosmosdb-table==1.0.6',
-		'Werkzeug==0.16.0',
+		'Werkzeug==2.0.3',
 		'gunicorn==19.9.0',
         'gevent==1.4.0',
         'greenlet==0.4.14',
