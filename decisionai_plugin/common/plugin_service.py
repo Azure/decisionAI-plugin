@@ -21,7 +21,7 @@ from .util.constant import ModelState
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL
 from .util.constant import INSTANCE_ID_KEY
 from .util.context import Context
-from .util.meta import insert_meta, get_meta, update_state, get_model_list, clear_state_when_necessary
+from .util.meta import insert_or_update_meta, get_meta, update_state, get_model_list, clear_state_when_necessary
 from .util.model import upload_model, download_model
 from .util.monitor import init_monitor, run_monitor, stop_monitor
 from .util.timeutil import str_to_dt
@@ -334,7 +334,7 @@ class PluginService():
             else:
                 model_id = str(uuid.uuid1())
 
-            insert_meta(self.config, subscription, model_id, request_body)
+            insert_or_update_meta(self.config, subscription, model_id, request_body)
             
             job = JobRecord(task_id, JobRecord.MODE_TRAINING, self.__class__.__name__, model_id, subscription, request_body)
             send_message(self.training_topic, dict(job))
