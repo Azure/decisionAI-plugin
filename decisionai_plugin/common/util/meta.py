@@ -17,10 +17,12 @@ import base64
 def get_azure_table():
     return AzureTable(AZURE_STORAGE_ACCOUNT, account_key=AZURE_STORAGE_TABLE_KEY, account_domain=AZURE_STORAGE_ACCOUNT_DOMAIN)
 
-def insert_meta(config, subscription, model_id, meta):
+def insert_or_update_meta(config, subscription, model_id, meta):
     azure_table = get_azure_table()
     if not azure_table.exists_table(config.az_tsana_meta_table):
         azure_table.create_table(config.az_tsana_meta_table)
+
+    origin_meta = get_meta(config, subscription, model_id)
     azure_table.insert_or_replace_entity(config.az_tsana_meta_table, subscription, 
             model_id, 
             group_id=meta['groupId'],
@@ -31,9 +33,9 @@ def insert_meta(config, subscription, model_id, meta):
             inst_id=meta['instance']['instanceId'],
             para=json.dumps(meta['instance']['params']),
             state=ModelState.Pending.name,
-            context='',
+            context='' if origin_meta is None else origin_meta['context'],
             last_error='',
-            ctime=time.time(),
+            ctime=time.time() if origin_meta is None else origin_meta['ctime'],
             mtime=time.time(),
             owner=thumbprint)
 # Get a model entity from meta
