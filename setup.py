@@ -48,7 +48,7 @@ setup(
         #'greenlet==0.4.13',
 	'apscheduler==3.8.0',
         'numpy==1.22.3',
-        'pandas==1.0.0',
+        'pandas==1.2.2',
         'azure-identity==1.4.1',
         'kafka-python==1.4.7',
         'ruamel.yaml==0.16.10',
