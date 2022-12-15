@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.57",
+    version="0.0.58",
     description="Time series analysis plugin",
     long_description="An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
     long_description_content_type="text/markdown",
@@ -42,8 +42,8 @@ setup(
 		'azure-cosmosdb-table==1.0.6',
 		'Werkzeug==2.0.3',
 		'gunicorn==19.9.0',
-        'gevent==1.4.0',
-        'greenlet==0.4.14',
+        'gevent==22.10.2',
+        'greenlet==2.0.1',
         #'gevent==1.3.4',
         #'greenlet==0.4.13',
 	'apscheduler==3.8.0',
