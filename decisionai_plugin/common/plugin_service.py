@@ -26,7 +26,7 @@ from .util.model import upload_model, download_model
 from .util.monitor import init_monitor, run_monitor, stop_monitor
 from .util.timeutil import str_to_dt
 
-from .util.kafka_operator import send_message, consume_loop
+from .util.kafka_operator_confluent import send_message, consume_loop
 from .util.job_record import JobRecord
 
 import zlib
