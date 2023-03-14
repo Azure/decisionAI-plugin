@@ -41,11 +41,7 @@ def after_request(response):
     request_log += '\n'
     request_log += '  url: ' + str(request.url)
     request_log += '\n'
-    request_log += '  body: ' + str(request.data)
-    request_log += '\n'
     request_log += '  response status: ' + str(response.status)
-    request_log += '\n'
-    request_log += '  response data: ' + str(response.data)
     request_log += '\n'
     request_log += 'Request end-----------------------------'
     log.info(request_log)
