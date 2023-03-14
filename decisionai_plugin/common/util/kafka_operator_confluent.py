@@ -77,7 +77,7 @@ def consume_loop(process_func, topic, retry_limit=0, error_callback=None, config
             kafka_configs = get_kafka_configs()
             if config is not None:
                 kafka_configs.update(config)
-            log.info("kafka configs: " + json.dumps(kafka_configs))
+
             consumer_configs = {
                 **kafka_configs,
                 'group.id': 'job-controller-v2-%s' % topic,
