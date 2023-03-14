@@ -3,7 +3,7 @@ import traceback
 from telemetry import log
 
 from flask import Flask, request, g, jsonify, make_response
-from flask_restful import Resource, Api
+from flask_restx import Resource, Api
 
 from .plugin_service import PluginService
 from .util.constant import STATUS_SUCCESS, STATUS_FAIL

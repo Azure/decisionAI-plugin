@@ -34,7 +34,7 @@ setup(
 	install_requires=[
 		'pyyaml==6.0',
 		'Flask==2.0.3',
-		'flask_restful==0.3.9',
+		'flask-restx==1.0.6',
 		'requests==2.28.2',
 		'python-dateutil==2.8.2',
 		'azure-storage-blob==12.1.0',
