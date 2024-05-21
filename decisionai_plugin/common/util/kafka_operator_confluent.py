@@ -5,7 +5,8 @@ from telemetry import log
 import time
 import traceback
 from .configuration import Configuration, get_config_as_str
-from .constant import IS_INTERNAL, IS_MT
+from .constant import IS_INTERNAL, IS_MT, EVENTHUB_USE_MI, AZURE_ENVIRONMENT
+from .managedidentityauthhelper import ManagedIdentityAuthHelper
 import json
 
 producer=None
@@ -35,14 +36,23 @@ KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka') if IS_INTERNAL els
 
 def get_kafka_configs():
     if IS_MT or not IS_INTERNAL:
-        sasl_password = os.environ['KAFKA_CONN_STRING']
-        kafka_configs = {
-            "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
-            "security.protocol": "SASL_SSL",
-            "sasl.mechanism": "PLAIN",
-            "sasl.username": "$ConnectionString",
-            "sasl.password": sasl_password
-        }
+        if EVENTHUB_USE_MI:
+            auth = ManagedIdentityAuthHelper(AZURE_ENVIRONMENT, KAFKA_BOOTSTRAP_SERVERS.split(","))
+            kafka_configs = {
+                "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
+                "security.protocol": "SASL_SSL",
+                "sasl.mechanism": "OAUTHBEARER",
+                "oauth_cb": auth.token,
+            }
+        else:
+            sasl_password = os.environ['KAFKA_CONN_STRING']
+            kafka_configs = {
+                "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
+                "security.protocol": "SASL_SSL",
+                "sasl.mechanism": "PLAIN",
+                "sasl.username": "$ConnectionString",
+                "sasl.password": sasl_password
+            }
     else:
         kafka_configs = {"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS}
     return kafka_configs

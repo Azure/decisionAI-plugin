@@ -38,6 +38,8 @@ STORAGE_GW_API = '/storage-gw-server'
 
 IS_MT = True if os.environ.get('IS_MULTI_TENANCY', 'false') == 'true' else False
 IS_INTERNAL = True if os.environ.get('MA_INTERNAL', 'false') == 'true' else False
+EVENTHUB_USE_MI = True if os.environ.get('EVENTHUB_USE_MI', 'false') == 'true' else False
+AZURE_ENVIRONMENT = os.environ.get('AZURE_ENVIRONMENT', 'AzureCloud')
 
 INSTANCE_ID_KEY = 'x-instance-id'
 
