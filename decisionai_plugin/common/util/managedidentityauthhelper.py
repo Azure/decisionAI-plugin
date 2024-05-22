@@ -1,14 +1,22 @@
 import json
-import requests
+import logging
 from urllib.parse import urlparse
+
+import requests
 from kafka.oauth import AbstractTokenProvider
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def configure(bootstrap_server_list):
     bootstrap_server = bootstrap_server_list[0]
     bootstrap_server = bootstrap_server.replace("\\[|\\]", "")
+    logger.info(f"bootstrap_server: {bootstrap_server}")
     url_parser = urlparse("https://" + bootstrap_server)
-    return url_parser.scheme + "://" + url_parser.hostname
+    server = url_parser.scheme + "://" + url_parser.hostname
+    logger.info(f"server: {server}")
+    return server
 
 
 class ManagedIdentityAuthHelper(AbstractTokenProvider):
@@ -32,6 +40,10 @@ class ManagedIdentityAuthHelper(AbstractTokenProvider):
 
     def token(self):
         msi_endpoint = self.get_msi_endpoint()
+        logger.info(f"Acquiring token from {msi_endpoint}")
         r = requests.get(msi_endpoint, headers={'Metadata': 'true'})
         data2 = json.loads(r.text)
-        return data2['access_token'], data2['expires_on']
+        access_token = data2['access_token']
+        expires_on = data2['expires_on']
+        logger.info(f"Got a new token for {msi_endpoint} will expires on {expires_on}")
+        return access_token, float(expires_on)

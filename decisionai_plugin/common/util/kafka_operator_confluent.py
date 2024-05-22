@@ -34,15 +34,19 @@ def _get_endpoint_with_pattern(name):
 
 KAFKA_BOOTSTRAP_SERVERS = _get_endpoint_with_pattern('kafka') if IS_INTERNAL else os.environ['KAFKA_ENDPOINT']
 
+
+def oauth_cb(auth_helper, config):
+    return auth_helper.token()
+
 def get_kafka_configs():
     if IS_MT or not IS_INTERNAL:
         if EVENTHUB_USE_MI:
-            auth = ManagedIdentityAuthHelper(AZURE_ENVIRONMENT, KAFKA_BOOTSTRAP_SERVERS.split(","))
+            auth_helper = ManagedIdentityAuthHelper(AZURE_ENVIRONMENT, KAFKA_BOOTSTRAP_SERVERS.split(","))
             kafka_configs = {
                 "bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS,
                 "security.protocol": "SASL_SSL",
                 "sasl.mechanism": "OAUTHBEARER",
-                "oauth_cb": auth.token,
+                "oauth_cb": functools.partial(oauth_cb, auth_helper),
             }
         else:
             sasl_password = os.environ['KAFKA_CONN_STRING']
