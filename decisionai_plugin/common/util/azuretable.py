@@ -2,13 +2,16 @@ from azure.cosmosdb.table.tableservice import TableService
 from azure.cosmosdb.table.models import Entity
 from azure.identity import DefaultAzureCredential
 
+from .constant import AZURE_STORAGE_ACCOUNT_USE_MI
+
+
 class AzureTable():
     def __init__(self, account_name, account_key=None, account_domain="core.windows.net"):
-        if account_key:
-            self.table_service = TableService(account_name=account_name, account_key=account_key, endpoint_suffix=account_domain)
-        else:
+        if AZURE_STORAGE_ACCOUNT_USE_MI:
             scope = "https://storage.azure.com/.default"
             self.table_service = TableService(account_name=account_name, sas_token=DefaultAzureCredential().get_token(scope)[0], endpoint_suffix=account_domain)
+        else:
+            self.table_service = TableService(account_name=account_name, account_key=account_key, endpoint_suffix=account_domain)
 
     def create_table(self, table_name):
         return self.table_service.create_table(table_name)
