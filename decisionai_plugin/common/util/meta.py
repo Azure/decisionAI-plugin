@@ -20,7 +20,7 @@ def get_azure_table():
 def insert_or_update_meta(config, subscription, model_id, meta):
     azure_table = get_azure_table()
     if not azure_table.exists_table(config.az_tsana_meta_table):
-        azure_table.create_table(config.az_tsana_meta_table)
+        azure_table.create_table_if_not_exists(config.az_tsana_meta_table)
 
     origin_meta = get_meta(config, subscription, model_id)
     azure_table.insert_or_replace_entity(config.az_tsana_meta_table, subscription, 
@@ -97,7 +97,7 @@ def get_model_list(config, subscription):
     azure_table = get_azure_table()
     if not azure_table.exists_table(config.az_tsana_meta_table):
         return models
-        
+
     entities = azure_table.get_entities(config.az_tsana_meta_table, subscription)
     
     for entity in entities.items:
@@ -128,7 +128,7 @@ def clear_state_when_necessary(config, subscription, model_id, entity):
         azure_table = get_azure_table()
         if not azure_table.exists_table(config.az_tsana_moniter_table):
             return entity
-        
+
         # Find the training owner in the monitor table and make sure it is alive
         if 'owner' in entity and entity['owner']:
             try: 

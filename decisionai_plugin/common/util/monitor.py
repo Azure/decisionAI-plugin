@@ -14,7 +14,7 @@ thumbprint = str(uuid.uuid1())
 def init_monitor(config): 
     azure_table = AzureTable(AZURE_STORAGE_ACCOUNT, AZURE_STORAGE_TABLE_KEY, AZURE_STORAGE_ACCOUNT_DOMAIN)
     if not azure_table.exists_table(config.az_tsana_moniter_table):
-        azure_table.create_table(config.az_tsana_moniter_table)
+        azure_table.create_table_if_not_exists(config.az_tsana_moniter_table)
     tk = time.time()
     azure_table.insert_or_replace_entity(config.az_tsana_moniter_table, config.tsana_app_name, 
                         thumbprint, 
