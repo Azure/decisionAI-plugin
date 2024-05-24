@@ -1,4 +1,4 @@
-import json
+import functools
 import os
 from confluent_kafka import Consumer, Producer, KafkaException
 from telemetry import log
