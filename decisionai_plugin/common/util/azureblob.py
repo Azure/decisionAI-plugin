@@ -3,6 +3,7 @@ from azure.core.exceptions import ResourceExistsError
 from azure.storage.blob import generate_container_sas, generate_blob_sas, BlobSasPermissions
 from azure.storage.blob import ResourceTypes, AccountSasPermissions, generate_account_sas
 from azure.identity import DefaultAzureCredential
+from .constant import AZURE_STORAGE_ACCOUNT_USE_MI
 
 from datetime import datetime
 from datetime import timedelta
@@ -11,14 +12,14 @@ from telemetry import log
 
 class AzureBlob():
     def __init__(self, account_name, account_key=None, account_domain="core.windows.net"):
-        if account_key:
-            connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix={}".format(account_name, account_key, account_domain)
-            # Create the BlobServiceClient object which will be used to create a container client
-            self.blob_service_client = BlobServiceClient.from_connection_string(connect_str)    
-        else:
+        if AZURE_STORAGE_ACCOUNT_USE_MI:
             account_url = "https://{}.blob.{}".format(account_name, account_domain)
             self.blob_service_client = BlobServiceClient(account_url, DefaultAzureCredential())
-        
+        else:
+            connect_str = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix={}".format(account_name, account_key, account_domain)
+            # Create the BlobServiceClient object which will be used to create a container client
+            self.blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
         self.account_domain = account_domain
 
     def create_container(self, container_name):
