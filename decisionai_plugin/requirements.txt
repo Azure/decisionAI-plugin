@@ -3,7 +3,7 @@ Flask==3.0.3
 flask_restful==0.3.9
 requests>=2.31.0
 python-dateutil==2.8.2
-azure-storage-blob==12.1.0
+azure-storage-blob==12.22.0
 azure-data-tables==12.1.0
 Werkzeug==3.0.3
 gunicorn==22.0.0
@@ -12,7 +12,7 @@ greenlet==2.0.1
 apscheduler==3.8.0
 numpy==1.22.3
 pandas==1.2.2
-azure-identity==1.4.1
+azure-identity==1.17.1
 kafka-python==2.0.2
 ruamel.yaml==0.16.10
 confluent_kafka==2.0.2

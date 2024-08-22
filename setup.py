@@ -15,7 +15,7 @@ with open("decisionai_plugin/README.md", "r") as fh:
 
 setup(
     name="decisionai_plugin",
-    version="0.0.73",
+    version="0.0.74",
     description="Time series analysis plugin",
     long_description="An plugin package for time series analysis, 3rd parties could implement their own train/inference.",
     long_description_content_type="text/markdown",
@@ -37,7 +37,7 @@ setup(
 		'flask_restful==0.3.9',
 		'requests>=2.31.0',
 		'python-dateutil==2.8.2',
-		'azure-storage-blob==12.1.0',
+		'azure-storage-blob==12.22.0',
 		'azure-data-tables==12.1.0',
 		'Werkzeug==3.0.3',
 		'gunicorn==22.0.0',
@@ -46,7 +46,7 @@ setup(
 	    'apscheduler==3.8.0',
         'numpy==1.22.3',
         'pandas==1.2.2',
-        'azure-identity==1.4.1',
+        'azure-identity==1.17.1',
         'kafka-python==2.0.2',
         'ruamel.yaml==0.16.10',
         'confluent_kafka==2.0.2',
