@@ -39,7 +39,7 @@ setup(
 		'python-dateutil==2.8.2',
 		'azure-storage-blob==12.1.0',
 		'azure-data-tables==12.1.0',
-		'Werkzeug==3.0.3',
+		'Werkzeug==3.0.6',
 		'gunicorn==22.0.0',
         'gevent==23.9.1',
         'greenlet==2.0.1',
